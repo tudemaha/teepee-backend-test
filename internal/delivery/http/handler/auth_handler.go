@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
+	"github.com/tudemaha/marketplace-be/internal/delivery/http/middleware"
 	"github.com/tudemaha/marketplace-be/internal/usecase"
 	"github.com/tudemaha/marketplace-be/pkg/response"
 	"github.com/tudemaha/marketplace-be/pkg/validator"
@@ -15,10 +16,18 @@ type AuthHandler struct {
 	authUC usecase.AuthUseCase
 }
 
-func NewAuthHandler(authUC usecase.AuthUseCase) *AuthHandler {
-	return &AuthHandler{
+func NewAuthHandler(g *echo.Group, authUC usecase.AuthUseCase, jwtSecret string) {
+	h := &AuthHandler{
 		authUC: authUC,
 	}
+
+	auth := g.Group("/auth")
+	auth.POST("/register", h.Register)
+	auth.POST("/login", h.Login)
+	auth.POST("/refresh", h.Refresh)
+	auth.POST("/logout", h.Logout)
+
+	auth.GET("/me", h.Me, middleware.Auth(jwtSecret))
 }
 
 func (h *AuthHandler) Register(c *echo.Context) error {

@@ -5,7 +5,6 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/tudemaha/marketplace-be/config"
-	"github.com/tudemaha/marketplace-be/internal/delivery/http"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/handler"
 	"github.com/tudemaha/marketplace-be/internal/infrastructure/database"
 	"github.com/tudemaha/marketplace-be/internal/repository/postgres"
@@ -33,10 +32,7 @@ func main() {
 	// 4. Initialize UseCases
 	authUseCase := usecase.NewAuthUseCase(userRepo, rtRepo, cfg.JWT.SecretKey)
 
-	// 5. Initialize Handlers
-	authHandler := handler.NewAuthHandler(authUseCase)
-
-	// 6. Initialize Echo Framework
+	// 5. Initialize Echo Framework
 	e := echo.New()
 	e.Validator = validator.New()
 
@@ -45,10 +41,11 @@ func main() {
 		return c.String(200, "OK")
 	})
 
-	// 7. Register Routes
-	http.RegisterRoutes(e, cfg.JWT.SecretKey, authHandler)
+	// 6. Initialize Handlers & Routes
+	v1 := e.Group("/api/v1")
+	handler.NewAuthHandler(v1, authUseCase, cfg.JWT.SecretKey)
 
-	// 8. Start Server
+	// 7. Start Server
 	log.Printf("Server starting on port %s in %s mode...", cfg.App.Port, cfg.App.Env)
 	if err := e.Start(":" + cfg.App.Port); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
