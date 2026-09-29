@@ -23,7 +23,6 @@ func NewPostgresDB(cfg config.DatabaseConfig) (*gorm.DB, error) {
 		&entity.Shop{},
 		&entity.Category{},
 		&entity.Product{},
-		&entity.ProductCategory{},
 		&entity.ProductImage{},
 		&entity.Cart{},
 		&entity.Order{},

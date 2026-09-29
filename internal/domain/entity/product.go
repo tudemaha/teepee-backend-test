@@ -16,21 +16,19 @@ const (
 )
 
 type Product struct {
-	ID          uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Name        string    `gorm:"not null"`
-	Description string    ``
-	Price       float64   `gorm:"not null;check:price > 0"`
-	Stock       int       `gorm:"not null;default:0;check:stock >= 0"`
-	Available   bool      `gorm:"default:true"`
-	ShopID      uuid.UUID `gorm:"type:uuid;not null"`
-	CreatedAt   time.Time ``
-	UpdatedAt   time.Time ``
-	// Derived — not stored in DB, populated by AfterFind hook
-	Status ProductStatus `gorm:"-"`
-	// Relations
-	Shop       Shop           `gorm:"foreignKey:ShopID"`
-	Images     []ProductImage `gorm:"foreignKey:ProductID"`
-	Categories []Category     `gorm:"many2many:product_categories;joinForeignKey:ProductID;joinReferences:CategoryID"`
+	ID          uuid.UUID      `gorm:"type:uuid;primaryKey"`
+	Name        string         `gorm:"not null"`
+	Description string         ``
+	Price       float64        `gorm:"not null;check:price > 0"`
+	Stock       int            `gorm:"not null;default:0;check:stock >= 0"`
+	Available   bool           `gorm:"default:true"`
+	ShopID      uuid.UUID      `gorm:"type:uuid;not null"`
+	CreatedAt   time.Time      ``
+	UpdatedAt   time.Time      ``
+	Status      ProductStatus  `gorm:"-"`
+	Shop        Shop           `gorm:"foreignKey:ShopID"`
+	Images      []ProductImage `gorm:"foreignKey:ProductID"`
+	Categories  []Category     `gorm:"many2many:product_categories;"`
 }
 
 func (p *Product) BeforeCreate(tx *gorm.DB) error {
@@ -44,7 +42,6 @@ func (p *Product) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterFind automatically computes the derived status after any DB fetch.
 func (p *Product) AfterFind(tx *gorm.DB) error {
 	p.Status = p.computeStatus()
 	return nil

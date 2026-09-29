@@ -35,64 +35,54 @@ func NewAuthUseCase(userRepo repository.UserRepository, rtRepo repository.Refres
 }
 
 func (u *authUseCase) Register(req *dto.RegisterRequest) (*dto.TokenResponse, error) {
-	// 1. Check if email exists
 	if _, err := u.userRepo.FindByEmail(req.Email); err == nil {
 		return nil, errors.New("email already in use")
 	}
 
-	// 2. Hash password
 	hashedPassword, err := password.Hash(req.Password)
 	if err != nil {
 		return nil, errors.New("failed to hash password")
 	}
 
-	// 3. Create user entity
 	user := &entity.User{
 		Name:     req.Name,
 		Email:    req.Email,
 		Phone:    req.Phone,
 		Password: hashedPassword,
-		Role:     entity.RoleBuyer, // Default role
+		Role:     entity.RoleBuyer,
 	}
 
 	if err := u.userRepo.Create(user); err != nil {
 		return nil, errors.New("failed to create user")
 	}
 
-	// 4. Generate tokens
 	return u.generateAndSaveTokens(user.ID, string(user.Role))
 }
 
 func (u *authUseCase) Login(req *dto.LoginRequest) (*dto.TokenResponse, error) {
-	// 1. Find user by email
 	user, err := u.userRepo.FindByEmail(req.Email)
 	if err != nil {
 		return nil, errors.New("invalid email or password")
 	}
 
-	// 2. Verify password
 	if !password.Check(req.Password, user.Password) {
 		return nil, errors.New("invalid email or password")
 	}
 
-	// 3. Generate tokens
 	return u.generateAndSaveTokens(user.ID, string(user.Role))
 }
 
 func (u *authUseCase) Refresh(req *dto.RefreshRequest) (*dto.TokenResponse, error) {
-	// 1. Find token in DB
 	rt, err := u.rtRepo.FindByToken(req.RefreshToken)
 	if err != nil {
 		return nil, errors.New("invalid refresh token")
 	}
 
-	// 2. Check expiry
 	if time.Now().After(rt.ExpiresAt) {
 		_ = u.rtRepo.DeleteByToken(req.RefreshToken)
 		return nil, errors.New("refresh token expired")
 	}
 
-	// 3. Get User to know the role
 	user, err := u.userRepo.FindByID(rt.UserID)
 	if err != nil {
 		return nil, errors.New("user not found")

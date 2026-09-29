@@ -5,11 +5,11 @@ import (
 	"gorm.io/gorm"
 )
 
-// Category is flat (no parent_id). Nesting can be added later if needed.
 type Category struct {
-	ID   uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Name string    `gorm:"not null"`
-	Slug string    `gorm:"uniqueIndex;not null"`
+	ID       uuid.UUID `gorm:"type:uuid;primaryKey"`
+	Name     string    `gorm:"not null"`
+	Slug     string    `gorm:"uniqueIndex;not null"`
+	Products []Product `gorm:"many2many:product_categories;"`
 }
 
 func (c *Category) BeforeCreate(tx *gorm.DB) error {

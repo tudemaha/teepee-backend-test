@@ -3,10 +3,11 @@ package dto
 import "github.com/google/uuid"
 
 type RegisterRequest struct {
-	Name     string `json:"name" validate:"required,min=2"`
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=6"`
-	Phone    string `json:"phone" validate:"omitempty,min=8"`
+	Name                 string `json:"name" validate:"required,min=2"`
+	Email                string `json:"email" validate:"required,email"`
+	Password             string `json:"password" validate:"required,min=6"`
+	PasswordConfirmation string `json:"password_confirmation" validate:"required,eqfield=Password"`
+	Phone                string `json:"phone" validate:"omitempty,min=8"`
 }
 
 type LoginRequest struct {

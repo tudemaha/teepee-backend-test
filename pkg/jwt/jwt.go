@@ -49,7 +49,6 @@ func GenerateTokenPair(userID uuid.UUID, role string, secret string) (accessToke
 // ValidateToken parses and validates a JWT token string
 func ValidateToken(tokenStr, secret string) (*CustomClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		// Ensure token algorithm is what we expect
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}

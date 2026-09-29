@@ -20,7 +20,7 @@ func Auth(secret string) echo.MiddlewareFunc {
 		},
 		// Custom error response to match our API standards
 		ErrorHandler: func(c *echo.Context, err error) error {
-			return response.Error(c, http.StatusUnauthorized, "invalid or missing token")
+			return response.Error(c, http.StatusUnauthorized, "invalid or missing token", []string{err.Error()})
 		},
 		// After successful validation, populate the context for downstream handlers
 		SuccessHandler: func(c *echo.Context) error {
@@ -43,7 +43,7 @@ func RequireRole(roles ...string) echo.MiddlewareFunc {
 		return func(c *echo.Context) error {
 			userRole, ok := c.Get("role").(string)
 			if !ok {
-				return response.Error(c, http.StatusForbidden, "role information missing")
+				return response.Error(c, http.StatusForbidden, "role information missing", nil)
 			}
 
 			for _, role := range roles {
@@ -52,7 +52,7 @@ func RequireRole(roles ...string) echo.MiddlewareFunc {
 				}
 			}
 
-			return response.Error(c, http.StatusForbidden, "you do not have permission to access this resource")
+			return response.Error(c, http.StatusForbidden, "you do not have permission to access this resource", nil)
 		}
 	}
 }

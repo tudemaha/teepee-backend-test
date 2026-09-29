@@ -27,6 +27,10 @@ type DatabaseConfig struct {
 	SSLMode  string
 }
 
+type JWTConfig struct {
+	SecretKey string
+}
+
 func (d DatabaseConfig) DSN() string {
 	return fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
@@ -34,8 +38,14 @@ func (d DatabaseConfig) DSN() string {
 	)
 }
 
-type JWTConfig struct {
-	SecretKey string
+func (c *Config) validate() error {
+	if c.JWT.SecretKey == "" {
+		return fmt.Errorf("JWT_SECRET is required")
+	}
+	if c.Database.Password == "" {
+		return fmt.Errorf("DB_PASSWORD is required")
+	}
+	return nil
 }
 
 func Load() (*Config, error) {
@@ -64,16 +74,6 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
-}
-
-func (c *Config) validate() error {
-	if c.JWT.SecretKey == "" {
-		return fmt.Errorf("JWT_SECRET is required")
-	}
-	if c.Database.Password == "" {
-		return fmt.Errorf("DB_PASSWORD is required")
-	}
-	return nil
 }
 
 func getEnv(key, defaultValue string) string {
