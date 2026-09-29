@@ -28,9 +28,15 @@ func main() {
 	// 3. Initialize Repositories
 	userRepo := postgres.NewUserRepository(db)
 	rtRepo := postgres.NewRefreshTokenRepository(db)
+	categoryRepo := postgres.NewCategoryRepository(db)
+	shopRepo := postgres.NewShopRepository(db)
+	productRepo := postgres.NewProductRepository(db)
 
 	// 4. Initialize UseCases
 	authUseCase := usecase.NewAuthUseCase(userRepo, rtRepo, cfg.JWT.SecretKey)
+	categoryUseCase := usecase.NewCategoryUseCase(categoryRepo)
+	shopUseCase := usecase.NewShopUseCase(shopRepo, userRepo)
+	productUseCase := usecase.NewProductUseCase(productRepo, shopRepo, categoryRepo)
 
 	// 5. Initialize Echo Framework
 	e := echo.New()
@@ -44,6 +50,9 @@ func main() {
 	// 6. Initialize Handlers & Routes
 	v1 := e.Group("/api/v1")
 	handler.NewAuthHandler(v1, authUseCase, cfg.JWT.SecretKey)
+	handler.NewCategoryHandler(v1, categoryUseCase, cfg.JWT.SecretKey)
+	handler.NewShopHandler(v1, shopUseCase, cfg.JWT.SecretKey)
+	handler.NewProductHandler(v1, productUseCase, cfg.JWT.SecretKey)
 
 	// 7. Start Server
 	log.Printf("Server starting on port %s in %s mode...", cfg.App.Port, cfg.App.Env)
