@@ -180,6 +180,9 @@ DB_SSLMODE=disable
 
 JWT_SECRET=your-super-secret-key-change-in-production
 
+# Comma-separated list of allowed frontend origins
+CORS_ALLOW_ORIGINS=http://localhost:3000,http://localhost:5173
+
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=admin123
 ```
@@ -192,11 +195,50 @@ go mod tidy
 
 ### 4. Run the application
 
+**Standard:**
+
 ```bash
 go run cmd/main.go
 ```
 
+**With live reload (recommended for development):**
+
+Install [Air](https://github.com/air-verse/air) if you haven't already:
+
+```bash
+go install github.com/air-verse/air@latest
+```
+
+Then start with autoreload:
+
+```bash
+air
+```
+
 The server will start on `http://localhost:8080`. The database schema is automatically migrated via GORM `AutoMigrate` on startup. A default admin user is also seeded from the `ADMIN_EMAIL` and `ADMIN_PASSWORD` env vars.
+
+---
+
+## 📖 API Documentation
+
+The API is documented using the **OpenAPI 3.0** specification, organized in a modular structure under [`docs/swagger/`](./docs/swagger/):
+
+```
+docs/swagger/
+├── openapi.yml          ← Root entry point
+├── components/          ← Domain-split schemas (auth, shop, product, ...)
+└── paths/               ← Domain-split path definitions (auth, shop, product, ...)
+```
+
+To preview the docs locally, you can use any of these:
+
+```bash
+# Via Redocly CLI (requires bun or npx)
+bunx @redocly/cli preview-docs docs/swagger/openapi.yml
+
+# Or open with Swagger UI / Stoplight Studio using the root file:
+# docs/swagger/openapi.yml
+```
 
 ---
 
@@ -256,27 +298,4 @@ All **32 implemented endpoints** are explicitly hit and asserted in the test sui
 
 ```bash
 go test -v ./internal/tests
-```
-
-### Expected output
-
-```
---- PASS: TestMarketplaceSuite (2.5s)
-    --- PASS: TestMarketplaceSuite/Test_01_Auth_RegisterAndLogin
-    --- PASS: TestMarketplaceSuite/Test_02_CreateShop
-    --- PASS: TestMarketplaceSuite/Test_02b_ShopReadsAndUpdates
-    --- PASS: TestMarketplaceSuite/Test_03_Admin_CreateCategory
-    --- PASS: TestMarketplaceSuite/Test_03b_CategoryReadsAndDelete
-    --- PASS: TestMarketplaceSuite/Test_04_CreateProduct
-    --- PASS: TestMarketplaceSuite/Test_04b_ProductUpdatesAndReads
-    --- PASS: TestMarketplaceSuite/Test_05_AddToCartAndCheckout
-    --- PASS: TestMarketplaceSuite/Test_05b_CartUpdatesAndDelete
-    --- PASS: TestMarketplaceSuite/Test_06_PayAndCompleteOrder
-    --- PASS: TestMarketplaceSuite/Test_06b_OrderAndPaymentReads
-    --- PASS: TestMarketplaceSuite/Test_07_ReviewProduct
-    --- PASS: TestMarketplaceSuite/Test_07b_ReviewReadsAndDelete
-    --- PASS: TestMarketplaceSuite/Test_08_DeleteProduct
-    --- PASS: TestMarketplaceSuite/Test_09_Auth_Me_And_Logout
-PASS
-ok  	github.com/tudemaha/marketplace-be/internal/tests
 ```
