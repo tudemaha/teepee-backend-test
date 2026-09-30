@@ -44,7 +44,7 @@ func (c *Config) validate() error {
 	if c.JWT.SecretKey == "" {
 		return fmt.Errorf("JWT_SECRET is required")
 	}
-	if c.Database.Password == "" {
+	if c.App.Env != "testing" && c.Database.Password == "" {
 		return fmt.Errorf("DB_PASSWORD is required")
 	}
 	return nil

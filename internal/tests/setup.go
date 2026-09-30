@@ -20,7 +20,6 @@ func SetupTestServer() (*echo.Echo, *gorm.DB) {
 	// Force environment to testing
 	os.Setenv("APP_ENV", "testing")
 	os.Setenv("JWT_SECRET", "super_secret_test_key_123")
-	os.Setenv("DB_PASSWORD", "postgres")
 
 	cfg, err := config.Load()
 	if err != nil {
