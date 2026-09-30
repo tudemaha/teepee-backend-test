@@ -27,7 +27,7 @@ func (r *orderRepository) Create(order *entity.Order, cartIDs []uuid.UUID) error
 			result := tx.Model(&entity.Product{}).
 				Where("id = ? AND stock >= ?", detail.ProductID, detail.Quantity).
 				UpdateColumn("stock", gorm.Expr("stock - ?", detail.Quantity))
-			
+
 			if result.Error != nil {
 				return result.Error
 			}
@@ -64,4 +64,26 @@ func (r *orderRepository) FindByID(id uuid.UUID) (*entity.Order, error) {
 		Preload("Details.Product.Images").
 		First(&o, "id = ?", id).Error
 	return &o, err
+}
+
+func (r *orderRepository) Update(order *entity.Order) error {
+	return r.db.Save(order).Error
+}
+
+func (r *orderRepository) CancelOrderAndRollbackStock(order *entity.Order) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(order).Update("status", entity.OrderStatusCancelled).Error; err != nil {
+			return err
+		}
+
+		for _, detail := range order.Details {
+			if err := tx.Model(&entity.Product{}).
+				Where("id = ?", detail.ProductID).
+				UpdateColumn("stock", gorm.Expr("stock + ?", detail.Quantity)).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }

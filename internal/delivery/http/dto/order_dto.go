@@ -13,6 +13,10 @@ type CheckoutRequest struct {
 	CartItemIDs     []uuid.UUID `json:"cart_item_ids" validate:"omitempty"`
 }
 
+type UpdateOrderStatusRequest struct {
+	Status string `json:"status" validate:"required,oneof=pending confirmed shipped delivered completed cancelled"`
+}
+
 type OrderDetailResponse struct {
 	ID        uuid.UUID       `json:"id"`
 	ProductID uuid.UUID       `json:"product_id"`

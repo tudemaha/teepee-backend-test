@@ -28,6 +28,7 @@ func NewOrderHandler(g *echo.Group, orderUC usecase.OrderUseCase, jwtSecret stri
 	orderGroup.POST("/checkout", h.Checkout)
 	orderGroup.GET("", h.GetMyOrders)
 	orderGroup.GET("/:id", h.GetByID)
+	orderGroup.PATCH("/:id/status", h.UpdateStatus)
 }
 
 func (h *OrderHandler) Checkout(c *echo.Context) error {
@@ -90,4 +91,39 @@ func (h *OrderHandler) GetByID(c *echo.Context) error {
 	}
 
 	return response.Success(c, http.StatusOK, "order fetched successfully", res)
+}
+
+func (h *OrderHandler) UpdateStatus(c *echo.Context) error {
+	userIDStr := c.Get("user_id").(string)
+	userID, _ := uuid.Parse(userIDStr)
+	role := c.Get("role").(string)
+
+	idParam := c.Param("id")
+	orderID, err := uuid.Parse(idParam)
+	if err != nil {
+		return response.Error(c, http.StatusBadRequest, "invalid order id format", nil)
+	}
+
+	var req dto.UpdateOrderStatusRequest
+	if err := c.Bind(&req); err != nil {
+		return response.Error(c, http.StatusBadRequest, "invalid request body", []string{err.Error()})
+	}
+	if err := c.Validate(&req); err != nil {
+		return response.Error(c, http.StatusBadRequest, "validation failed", validator.FormatErrors(err))
+	}
+
+	if err := h.orderUC.UpdateStatus(userID, role, orderID, &req); err != nil {
+		if err.Error() == "order not found" {
+			return response.Error(c, http.StatusNotFound, err.Error(), nil)
+		}
+		if err.Error()[:12] == "unauthorized" {
+			return response.Error(c, http.StatusForbidden, err.Error(), nil)
+		}
+		if err.Error() == "only pending orders can be cancelled" {
+			return response.Error(c, http.StatusBadRequest, err.Error(), nil)
+		}
+		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
+	}
+
+	return response.Success(c, http.StatusOK, "order status updated successfully", nil)
 }

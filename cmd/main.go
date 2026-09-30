@@ -33,6 +33,7 @@ func main() {
 	productRepo := postgres.NewProductRepository(db)
 	cartRepo := postgres.NewCartRepository(db)
 	orderRepo := postgres.NewOrderRepository(db)
+	paymentRepo := postgres.NewPaymentRepository(db)
 
 	// 4. Initialize UseCases
 	authUseCase := usecase.NewAuthUseCase(userRepo, rtRepo, cfg.JWT.SecretKey)
@@ -40,7 +41,8 @@ func main() {
 	shopUseCase := usecase.NewShopUseCase(shopRepo, userRepo)
 	productUseCase := usecase.NewProductUseCase(productRepo, shopRepo, categoryRepo)
 	cartUseCase := usecase.NewCartUseCase(cartRepo, productRepo)
-	orderUseCase := usecase.NewOrderUseCase(orderRepo, cartRepo, productRepo)
+	orderUseCase := usecase.NewOrderUseCase(orderRepo, cartRepo, productRepo, userRepo)
+	paymentUseCase := usecase.NewPaymentUseCase(paymentRepo, orderRepo, userRepo)
 
 	// 5. Initialize Echo Framework
 	e := echo.New()
@@ -59,6 +61,7 @@ func main() {
 	handler.NewProductHandler(v1, productUseCase, cfg.JWT.SecretKey)
 	handler.NewCartHandler(v1, cartUseCase, cfg.JWT.SecretKey)
 	handler.NewOrderHandler(v1, orderUseCase, cfg.JWT.SecretKey)
+	handler.NewPaymentHandler(v1, paymentUseCase, cfg.JWT.SecretKey)
 
 	// 7. Start Server
 	log.Printf("Server starting on port %s in %s mode...", cfg.App.Port, cfg.App.Env)

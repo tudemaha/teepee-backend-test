@@ -14,19 +14,22 @@ type OrderUseCase interface {
 	Checkout(buyerID uuid.UUID, req *dto.CheckoutRequest) (*dto.OrderResponse, error)
 	GetMyOrders(buyerID uuid.UUID) ([]dto.OrderResponse, error)
 	GetByID(buyerID uuid.UUID, orderID uuid.UUID) (*dto.OrderResponse, error)
+	UpdateStatus(userID uuid.UUID, role string, orderID uuid.UUID, req *dto.UpdateOrderStatusRequest) error
 }
 
 type orderUseCase struct {
 	orderRepo   repository.OrderRepository
 	cartRepo    repository.CartRepository
 	productRepo repository.ProductRepository
+	userRepo    repository.UserRepository
 }
 
-func NewOrderUseCase(orderRepo repository.OrderRepository, cartRepo repository.CartRepository, productRepo repository.ProductRepository) OrderUseCase {
+func NewOrderUseCase(orderRepo repository.OrderRepository, cartRepo repository.CartRepository, productRepo repository.ProductRepository, userRepo repository.UserRepository) OrderUseCase {
 	return &orderUseCase{
 		orderRepo:   orderRepo,
 		cartRepo:    cartRepo,
 		productRepo: productRepo,
+		userRepo:    userRepo,
 	}
 }
 
@@ -181,4 +184,43 @@ func mapToOrderSummaryResponse(o *entity.Order) *dto.OrderResponse {
 		ShippingAddress: o.ShippingAddress,
 		CreatedAt:       o.CreatedAt,
 	}
+}
+
+func (u *orderUseCase) UpdateStatus(userID uuid.UUID, role string, orderID uuid.UUID, req *dto.UpdateOrderStatusRequest) error {
+	order, err := u.orderRepo.FindByID(orderID)
+	if err != nil {
+		return errors.New("order not found")
+	}
+
+	newStatus := entity.OrderStatus(req.Status)
+	if order.Status == newStatus {
+		return nil
+	}
+
+	switch newStatus {
+	case entity.OrderStatusCancelled:
+		if role == string(entity.RoleBuyer) {
+			if order.BuyerID != userID {
+				return errors.New("unauthorized to cancel this order")
+			}
+			if order.Status != entity.OrderStatusPending {
+				return errors.New("only pending orders can be cancelled")
+			}
+		}
+	case entity.OrderStatusConfirmed, entity.OrderStatusShipped, entity.OrderStatusDelivered:
+		if role != string(entity.RoleAdmin) && role != string(entity.RoleSeller) {
+			return errors.New("unauthorized to update fulfillment status")
+		}
+	case entity.OrderStatusCompleted:
+		if role == string(entity.RoleBuyer) && order.BuyerID != userID {
+			return errors.New("unauthorized to complete this order")
+		}
+	}
+
+	if newStatus == entity.OrderStatusCancelled && order.Status != entity.OrderStatusCancelled {
+		return u.orderRepo.CancelOrderAndRollbackStock(order)
+	}
+
+	order.Status = newStatus
+	return u.orderRepo.Update(order)
 }
