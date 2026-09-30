@@ -7,6 +7,7 @@ import (
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
 	"github.com/tudemaha/marketplace-be/internal/domain/entity"
 	"github.com/tudemaha/marketplace-be/internal/domain/repository"
+	"github.com/tudemaha/marketplace-be/pkg/utils"
 )
 
 type ProductUseCase interface {
@@ -71,7 +72,7 @@ func (u *productUseCase) Create(sellerID uuid.UUID, req *dto.CreateProductReques
 
 	// Attach shop to product for the response formatting
 	product.Shop = *shop
-	return mapToProductResponse(product), nil
+	return utils.MapToProductResponse(product), nil
 }
 
 func (u *productUseCase) GetByID(id uuid.UUID) (*dto.ProductResponse, error) {
@@ -79,7 +80,7 @@ func (u *productUseCase) GetByID(id uuid.UUID) (*dto.ProductResponse, error) {
 	if err != nil {
 		return nil, errors.New("product not found")
 	}
-	return mapToProductResponse(product), nil
+	return utils.MapToProductResponse(product), nil
 }
 
 func (u *productUseCase) GetAll(filter dto.ProductListFilter) ([]dto.ProductResponse, error) {
@@ -90,7 +91,7 @@ func (u *productUseCase) GetAll(filter dto.ProductListFilter) ([]dto.ProductResp
 
 	var res []dto.ProductResponse
 	for _, p := range products {
-		res = append(res, *mapToProductResponse(&p))
+		res = append(res, *utils.MapToProductResponse(&p))
 	}
 
 	if res == nil {
@@ -120,7 +121,7 @@ func (u *productUseCase) Update(sellerID uuid.UUID, productID uuid.UUID, req *dt
 	}
 
 	updatedProduct, _ := u.productRepo.FindByID(productID)
-	return mapToProductResponse(updatedProduct), nil
+	return utils.MapToProductResponse(updatedProduct), nil
 }
 
 func (u *productUseCase) Delete(sellerID uuid.UUID, productID uuid.UUID) error {
@@ -139,37 +140,4 @@ func (u *productUseCase) Delete(sellerID uuid.UUID, productID uuid.UUID) error {
 	}
 
 	return nil
-}
-
-func mapToProductResponse(p *entity.Product) *dto.ProductResponse {
-	var catRes []dto.CategoryResponse
-	for _, c := range p.Categories {
-		catRes = append(catRes, dto.CategoryResponse{
-			ID:   c.ID,
-			Name: c.Name,
-			Slug: c.Slug,
-		})
-	}
-
-	var imgRes []dto.ProductImageResponse
-	for _, i := range p.Images {
-		imgRes = append(imgRes, dto.ProductImageResponse{
-			ID:        i.ID,
-			URL:       i.URL,
-			IsPrimary: i.IsPrimary,
-		})
-	}
-
-	return &dto.ProductResponse{
-		ID:          p.ID,
-		Name:        p.Name,
-		Description: p.Description,
-		Price:       p.Price,
-		Stock:       p.Stock,
-		Status:      string(p.Status),
-		ShopID:      p.ShopID,
-		ShopName:    p.Shop.Name,
-		Categories:  catRes,
-		Images:      imgRes,
-	}
 }
