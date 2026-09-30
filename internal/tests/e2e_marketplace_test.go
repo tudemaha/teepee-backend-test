@@ -348,6 +348,33 @@ func (s *MarketplaceTestSuite) Test_08_DeleteProduct() {
 	s.assertStatus(http.StatusOK, res)
 }
 
+func (s *MarketplaceTestSuite) Test_09_Auth_Me_And_Logout() {
+	// 1. GET /api/v1/auth/me
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
+	res := s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// Fetch the active refresh token from DB manually for Logout test (since it was hidden in token pair)
+	var refreshToken string
+	s.db.Raw("SELECT token FROM refresh_tokens LIMIT 1").Scan(&refreshToken)
+
+	// 2. POST /api/v1/auth/logout
+	logoutReq := dto.RefreshRequest{
+		RefreshToken: refreshToken,
+	}
+	body, _ := json.Marshal(logoutReq)
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", bytes.NewBuffer(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// Verify it was deleted
+	var count int64
+	s.db.Table("refresh_tokens").Where("token = ?", refreshToken).Count(&count)
+	s.Require().Equal(int64(0), count)
+}
+
 func TestMarketplaceSuite(t *testing.T) {
 	suite.Run(t, new(MarketplaceTestSuite))
 }
