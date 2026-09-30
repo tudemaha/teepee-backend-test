@@ -15,7 +15,7 @@ import (
 type PaymentUseCase interface {
 	CreatePayment(buyerID uuid.UUID, req *dto.CreatePaymentRequest) (*dto.PaymentResponse, error)
 	GetPaymentByOrderID(buyerID uuid.UUID, orderID uuid.UUID) (*dto.PaymentResponse, error)
-	UpdatePaymentStatus(adminID uuid.UUID, paymentID uuid.UUID, req *dto.UpdatePaymentStatusRequest) error
+	UpdatePaymentStatus(userID uuid.UUID, role string, paymentID uuid.UUID, req *dto.UpdatePaymentStatusRequest) error
 }
 
 type paymentUseCase struct {
@@ -74,9 +74,8 @@ func (u *paymentUseCase) GetPaymentByOrderID(buyerID uuid.UUID, orderID uuid.UUI
 	return mapToPaymentResponse(payment), nil
 }
 
-func (u *paymentUseCase) UpdatePaymentStatus(adminID uuid.UUID, paymentID uuid.UUID, req *dto.UpdatePaymentStatusRequest) error {
-	adminUser, err := u.userRepo.FindByID(adminID)
-	if err != nil || adminUser.Role != entity.RoleAdmin {
+func (u *paymentUseCase) UpdatePaymentStatus(userID uuid.UUID, role string, paymentID uuid.UUID, req *dto.UpdatePaymentStatusRequest) error {
+	if role != string(entity.RoleAdmin) {
 		return fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized")
 	}
 

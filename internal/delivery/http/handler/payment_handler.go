@@ -28,7 +28,7 @@ func NewPaymentHandler(g *echo.Group, paymentUC usecase.PaymentUseCase, jwtSecre
 
 	paymentGroup.POST("", h.CreatePayment)
 	paymentGroup.GET("/:orderId", h.GetPaymentByOrderID)
-	paymentGroup.PATCH("/:id/status", h.UpdatePaymentStatus)
+	paymentGroup.PATCH("/:id/status", h.UpdatePaymentStatus, middleware.RequireRole("admin"))
 }
 
 func (h *PaymentHandler) CreatePayment(c *echo.Context) error {
@@ -79,8 +79,9 @@ func (h *PaymentHandler) GetPaymentByOrderID(c *echo.Context) error {
 }
 
 func (h *PaymentHandler) UpdatePaymentStatus(c *echo.Context) error {
-	adminIDStr := c.Get("user_id").(string)
-	adminID, _ := uuid.Parse(adminIDStr)
+	userIDStr := c.Get("user_id").(string)
+	userID, _ := uuid.Parse(userIDStr)
+	role := c.Get("role").(string)
 
 	idParam := c.Param("id")
 	paymentID, err := uuid.Parse(idParam)
@@ -96,7 +97,7 @@ func (h *PaymentHandler) UpdatePaymentStatus(c *echo.Context) error {
 		return response.Error(c, http.StatusBadRequest, "validation failed", validator.FormatErrors(err))
 	}
 
-	if err := h.paymentUC.UpdatePaymentStatus(adminID, paymentID, &req); err != nil {
+	if err := h.paymentUC.UpdatePaymentStatus(userID, role, paymentID, &req); err != nil {
 		if errors.Is(err, apperror.ErrForbidden) {
 			return response.Error(c, http.StatusForbidden, err.Error(), nil)
 		}
