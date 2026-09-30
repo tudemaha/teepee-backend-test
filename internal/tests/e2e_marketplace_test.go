@@ -186,6 +186,62 @@ func (s *MarketplaceTestSuite) Test_04_CreateProduct() {
 	s.ProductID = prodData["id"].(string)
 }
 
+func (s *MarketplaceTestSuite) Test_04b_ProductUpdatesAndReads() {
+	// 1. Update Stock
+	stockReq := dto.UpdateProductStockRequest{Stock: 50}
+	body, _ := json.Marshal(stockReq)
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/products/"+s.ProductID+"/stock", bytes.NewBuffer(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.SellerToken)
+	res := s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// 2. Update Availability
+	avail := false
+	availReq := dto.UpdateProductAvailabilityRequest{Available: &avail}
+	body, _ = json.Marshal(availReq)
+	req = httptest.NewRequest(http.MethodPatch, "/api/v1/products/"+s.ProductID+"/availability", bytes.NewBuffer(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.SellerToken)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// Revert availability to true so checkout test doesn't fail
+	avail = true
+	availReq = dto.UpdateProductAvailabilityRequest{Available: &avail}
+	body, _ = json.Marshal(availReq)
+	req = httptest.NewRequest(http.MethodPatch, "/api/v1/products/"+s.ProductID+"/availability", bytes.NewBuffer(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.SellerToken)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// 3. Full Update (PUT)
+	putReq := dto.UpdateProductRequest{
+		Name:        "Updated Smartphone",
+		Description: "Updated description",
+		Price:       88800,
+		Stock:       50,
+		CategoryIDs: []uuid.UUID{uuid.MustParse(s.CategoryID)},
+	}
+	body, _ = json.Marshal(putReq)
+	req = httptest.NewRequest(http.MethodPut, "/api/v1/products/"+s.ProductID, bytes.NewBuffer(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.SellerToken)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// 4. GET Product by ID
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/products/"+s.ProductID, nil)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// 5. GET All Products
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/products", nil)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+}
+
 func (s *MarketplaceTestSuite) Test_05_AddToCartAndCheckout() {
 	// Buyer adds product to cart
 	cartReq := dto.AddToCartRequest{
@@ -283,6 +339,13 @@ func (s *MarketplaceTestSuite) Test_07_ReviewProduct() {
 	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
 	res := s.executeRequest(req)
 	s.assertStatus(http.StatusCreated, res)
+}
+
+func (s *MarketplaceTestSuite) Test_08_DeleteProduct() {
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/products/"+s.ProductID, nil)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.SellerToken)
+	res := s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
 }
 
 func TestMarketplaceSuite(t *testing.T) {
