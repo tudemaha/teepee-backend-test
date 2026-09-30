@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 	"github.com/tudemaha/marketplace-be/config"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/handler"
 	"github.com/tudemaha/marketplace-be/internal/infrastructure/database"
@@ -49,6 +50,11 @@ func main() {
 	// 5. Initialize Echo Framework
 	e := echo.New()
 	e.Validator = validator.New()
+
+	// Global Middleware
+	e.Use(middleware.RequestLogger())
+	e.Use(middleware.Recover())
+	e.Use(middleware.CORS())
 
 	// Simple health check route
 	e.GET("/health", func(c *echo.Context) error {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
+	echomw "github.com/labstack/echo/v5/middleware"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/middleware"
 	"github.com/tudemaha/marketplace-be/internal/usecase"
@@ -22,6 +23,7 @@ func NewAuthHandler(g *echo.Group, authUC usecase.AuthUseCase, jwtSecret string)
 	}
 
 	auth := g.Group("/auth")
+	auth.Use(echomw.RateLimiter(echomw.NewRateLimiterMemoryStore(20)))
 	auth.POST("/register", h.Register)
 	auth.POST("/login", h.Login)
 	auth.POST("/refresh", h.Refresh)

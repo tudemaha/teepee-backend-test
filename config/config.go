@@ -14,8 +14,10 @@ type Config struct {
 }
 
 type AppConfig struct {
-	Port string
-	Env  string
+	Port          string
+	Env           string
+	AdminEmail    string
+	AdminPassword string
 }
 
 type DatabaseConfig struct {
@@ -53,8 +55,10 @@ func Load() (*Config, error) {
 
 	cfg := &Config{
 		App: AppConfig{
-			Port: getEnv("APP_PORT", "8080"),
-			Env:  getEnv("APP_ENV", "development"),
+			Port:          getEnv("APP_PORT", "8080"),
+			Env:           getEnv("APP_ENV", "development"),
+			AdminEmail:    getEnv("ADMIN_EMAIL", "admin@example.com"),
+			AdminPassword: getEnv("ADMIN_PASSWORD", "admin123"),
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
