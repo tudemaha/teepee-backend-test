@@ -50,7 +50,7 @@ func (h *ShopHandler) Create(c *echo.Context) error {
 		return response.Error(c, http.StatusBadRequest, "validation failed", validator.FormatErrors(err))
 	}
 
-	res, err := h.shopUC.Create(userID, &req)
+	res, err := h.shopUC.Create(c.Request().Context(), userID, &req)
 	if err != nil {
 		if errors.Is(err, apperror.ErrConflict) {
 			return response.Error(c, http.StatusConflict, err.Error(), nil)

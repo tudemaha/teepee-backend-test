@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 
 	"github.com/google/uuid"
 	"github.com/tudemaha/marketplace-be/internal/domain/entity"
@@ -32,8 +33,8 @@ func (r *userRepository) FindByEmail(email string) (*entity.User, error) {
 	return &u, err
 }
 
-func (r *userRepository) Update(u *entity.User) error {
-	return r.db.Save(u).Error
+func (r *userRepository) Update(ctx context.Context, u *entity.User) error {
+	return ExtractDB(ctx, r.db).Save(u).Error
 }
 
 func (r *userRepository) Delete(id uuid.UUID) error {

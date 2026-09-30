@@ -41,7 +41,7 @@ func main() {
 	// 4. Initialize UseCases
 	authUseCase := usecase.NewAuthUseCase(userRepo, rtRepo, cfg.JWT.SecretKey)
 	categoryUseCase := usecase.NewCategoryUseCase(categoryRepo)
-	shopUseCase := usecase.NewShopUseCase(shopRepo, userRepo)
+	shopUseCase := usecase.NewShopUseCase(txManager, shopRepo, userRepo)
 	productUseCase := usecase.NewProductUseCase(productRepo, shopRepo, categoryRepo)
 	cartUseCase := usecase.NewCartUseCase(cartRepo, productRepo)
 	orderUseCase := usecase.NewOrderUseCase(txManager, orderRepo, cartRepo, productRepo, userRepo)

@@ -1,5 +1,7 @@
 package postgres
 
+import "context"
+
 import (
 
 	"github.com/google/uuid"
@@ -16,8 +18,8 @@ func NewShopRepository(db *gorm.DB) repository.ShopRepository {
 	return &shopRepository{db}
 }
 
-func (r *shopRepository) Create(shop *entity.Shop) error {
-	return r.db.Create(shop).Error
+func (r *shopRepository) Create(ctx context.Context, shop *entity.Shop) error {
+	return ExtractDB(ctx, r.db).Create(shop).Error
 }
 
 func (r *shopRepository) FindByID(id uuid.UUID) (*entity.Shop, error) {
