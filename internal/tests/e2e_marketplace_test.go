@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
 	"github.com/google/uuid"
 
 	"github.com/labstack/echo/v5"
@@ -51,9 +52,9 @@ func (s *MarketplaceTestSuite) assertStatus(expected int, res *httptest.Response
 func (s *MarketplaceTestSuite) Test_01_Auth_RegisterAndLogin() {
 	// Register Buyer
 	buyerReq := dto.RegisterRequest{
-		Name:     "Test Buyer",
-		Email:    "buyer@test.com",
-		Password: "password123",
+		Name:                 "Test Buyer",
+		Email:                "buyer@test.com",
+		Password:             "password123",
 		PasswordConfirmation: "password123",
 	}
 	body, _ := json.Marshal(buyerReq)
@@ -69,9 +70,9 @@ func (s *MarketplaceTestSuite) Test_01_Auth_RegisterAndLogin() {
 
 	// Register Seller
 	sellerReq := dto.RegisterRequest{
-		Name:     "Test Seller",
-		Email:    "seller@test.com",
-		Password: "password123",
+		Name:                 "Test Seller",
+		Email:                "seller@test.com",
+		Password:             "password123",
 		PasswordConfirmation: "password123",
 	}
 	body, _ = json.Marshal(sellerReq)
@@ -97,12 +98,35 @@ func (s *MarketplaceTestSuite) Test_02_CreateShop() {
 	s.assertStatus(http.StatusCreated, res)
 }
 
+
+func (s *MarketplaceTestSuite) Test_02b_ShopReadsAndUpdates() {
+	var shopID string
+	s.db.Raw("SELECT id FROM shops LIMIT 1").Scan(&shopID)
+
+	// GET /shops/:id
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/shops/"+shopID, nil)
+	res := s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// PUT /shops/:id
+	updateReq := dto.UpdateShopRequest{
+		Name:    "Updated Shop Name",
+		Address: "456 Updated Street",
+	}
+	body, _ := json.Marshal(updateReq)
+	req = httptest.NewRequest(http.MethodPut, "/api/v1/shops/"+shopID, bytes.NewBuffer(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.SellerToken)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+}
+
 func (s *MarketplaceTestSuite) Test_03_Admin_CreateCategory() {
 	// Register Admin
 	adminReq := dto.RegisterRequest{
-		Name:     "Admin User",
-		Email:    "admin@test.com",
-		Password: "password123",
+		Name:                 "Admin User",
+		Email:                "admin@test.com",
+		Password:             "password123",
 		PasswordConfirmation: "password123",
 	}
 	body, _ := json.Marshal(adminReq)
@@ -130,7 +154,6 @@ func (s *MarketplaceTestSuite) Test_03_Admin_CreateCategory() {
 	data := responseMap["data"].(map[string]interface{})
 	s.AdminToken = data["access_token"].(string)
 
-
 	// Create Category
 	catReq := dto.CreateCategoryRequest{
 		Name: "Electronics",
@@ -147,6 +170,32 @@ func (s *MarketplaceTestSuite) Test_03_Admin_CreateCategory() {
 	s.CategoryID = catData["id"].(string)
 }
 
+
+func (s *MarketplaceTestSuite) Test_03b_CategoryReadsAndDelete() {
+	// GET /categories
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/categories", nil)
+	res := s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// Create dummy category to delete
+	catReq := dto.CreateCategoryRequest{Name: "To Be Deleted"}
+	body, _ := json.Marshal(catReq)
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/categories", bytes.NewBuffer(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.AdminToken)
+	res = s.executeRequest(req)
+	
+	var responseMap map[string]interface{}
+	json.Unmarshal(res.Body.Bytes(), &responseMap)
+	dummyCatID := responseMap["data"].(map[string]interface{})["id"].(string)
+
+	// DELETE /categories/:id
+	req = httptest.NewRequest(http.MethodDelete, "/api/v1/categories/"+dummyCatID, nil)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.AdminToken)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+}
+
 func (s *MarketplaceTestSuite) Test_04_CreateProduct() {
 	// The seller creates a product, using the SellerToken (which should now have Seller role!)
 	prodReq := dto.CreateProductRequest{
@@ -157,10 +206,9 @@ func (s *MarketplaceTestSuite) Test_04_CreateProduct() {
 		CategoryIDs: []uuid.UUID{uuid.MustParse(s.CategoryID)},
 	}
 	body, _ := json.Marshal(prodReq)
-	
+
 	// Because role is cached in the JWT from Login, and they created a shop *after* login,
-	// their JWT might still say "buyer". Wait, if the role was "buyer" during login, it won't update in the JWT until they re-login.
-	// Let's re-login the seller to get the upgraded "seller" JWT token!
+	// their JWT might still say "buyer".
 	time.Sleep(1 * time.Second)
 	loginReq := dto.LoginRequest{
 		Email:    "seller@test.com",
@@ -254,7 +302,7 @@ func (s *MarketplaceTestSuite) Test_05_AddToCartAndCheckout() {
 	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
 	res := s.executeRequest(req)
 	s.assertStatus(http.StatusCreated, res)
-	
+
 	// Fetch Cart to get the CartID
 	req = httptest.NewRequest(http.MethodGet, "/api/v1/carts", nil)
 	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
@@ -283,6 +331,51 @@ func (s *MarketplaceTestSuite) Test_05_AddToCartAndCheckout() {
 	json.Unmarshal(res.Body.Bytes(), &responseMap)
 	orderData := responseMap["data"].(map[string]interface{})
 	s.OrderID = orderData["id"].(string)
+}
+
+
+func (s *MarketplaceTestSuite) Test_05b_CartUpdatesAndDelete() {
+	// Buyer adds dummy product to cart
+	cartReq := dto.AddToCartRequest{
+		ProductID: uuid.MustParse(s.ProductID),
+		Quantity:  1,
+	}
+	body, _ := json.Marshal(cartReq)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/carts", bytes.NewBuffer(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
+	res := s.executeRequest(req)
+	s.assertStatus(http.StatusCreated, res)
+
+	// Fetch new cart item id
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/carts", nil)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
+	res = s.executeRequest(req)
+	var responseMap map[string]interface{}
+	json.Unmarshal(res.Body.Bytes(), &responseMap)
+	items := responseMap["data"].(map[string]interface{})["items"].([]interface{})
+	var dummyCartID string
+	for _, item := range items {
+		i := item.(map[string]interface{})
+		if i["id"].(string) != s.CartID { // Skip the checked out one
+			dummyCartID = i["id"].(string)
+		}
+	}
+
+	// PUT /carts/:id
+	updateReq := dto.UpdateCartRequest{Quantity: 5}
+	body, _ = json.Marshal(updateReq)
+	req = httptest.NewRequest(http.MethodPut, "/api/v1/carts/"+dummyCartID, bytes.NewBuffer(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// DELETE /carts/:id
+	req = httptest.NewRequest(http.MethodDelete, "/api/v1/carts/"+dummyCartID, nil)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
 }
 
 func (s *MarketplaceTestSuite) Test_06_PayAndCompleteOrder() {
@@ -326,6 +419,27 @@ func (s *MarketplaceTestSuite) Test_06_PayAndCompleteOrder() {
 	s.assertStatus(http.StatusOK, res)
 }
 
+
+func (s *MarketplaceTestSuite) Test_06b_OrderAndPaymentReads() {
+	// GET /orders
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/orders", nil)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
+	res := s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// GET /orders/:id
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/orders/"+s.OrderID, nil)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// GET /payments/:orderId
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/payments/"+s.OrderID, nil)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+}
+
 func (s *MarketplaceTestSuite) Test_07_ReviewProduct() {
 	// Buyer reviews the completed product
 	reviewReq := dto.CreateReviewRequest{
@@ -339,6 +453,24 @@ func (s *MarketplaceTestSuite) Test_07_ReviewProduct() {
 	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
 	res := s.executeRequest(req)
 	s.assertStatus(http.StatusCreated, res)
+}
+
+
+
+func (s *MarketplaceTestSuite) Test_07b_ReviewReadsAndDelete() {
+	// GET /products/:id/reviews
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/products/"+s.ProductID+"/reviews", nil)
+	res := s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	var reviewID string
+	s.db.Raw("SELECT id FROM reviews LIMIT 1").Scan(&reviewID)
+
+	// DELETE /reviews/:id
+	req = httptest.NewRequest(http.MethodDelete, "/api/v1/reviews/"+reviewID, nil)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+s.BuyerToken)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
 }
 
 func (s *MarketplaceTestSuite) Test_08_DeleteProduct() {
@@ -359,11 +491,23 @@ func (s *MarketplaceTestSuite) Test_09_Auth_Me_And_Logout() {
 	var refreshToken string
 	s.db.Raw("SELECT token FROM refresh_tokens LIMIT 1").Scan(&refreshToken)
 
+	
+	// POST /api/v1/auth/refresh
+	refreshReq := dto.RefreshRequest{RefreshToken: refreshToken}
+	body, _ := json.Marshal(refreshReq)
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/auth/refresh", bytes.NewBuffer(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	res = s.executeRequest(req)
+	s.assertStatus(http.StatusOK, res)
+
+	// Need to fetch the NEW refresh token for logout
+	s.db.Raw("SELECT token FROM refresh_tokens LIMIT 1").Scan(&refreshToken)
+
 	// 2. POST /api/v1/auth/logout
 	logoutReq := dto.RefreshRequest{
 		RefreshToken: refreshToken,
 	}
-	body, _ := json.Marshal(logoutReq)
+	body, _ = json.Marshal(logoutReq)
 	req = httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", bytes.NewBuffer(body))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	res = s.executeRequest(req)
