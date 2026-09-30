@@ -87,3 +87,12 @@ func (r *orderRepository) CancelOrderAndRollbackStock(order *entity.Order) error
 		return nil
 	})
 }
+
+func (r *orderRepository) HasCompletedOrderWithProduct(buyerID uuid.UUID, productID uuid.UUID) (bool, error) {
+	var count int64
+	err := r.db.Model(&entity.Order{}).
+		Joins("JOIN order_details ON order_details.order_id = orders.id").
+		Where("orders.buyer_id = ? AND orders.status = ? AND order_details.product_id = ?", buyerID, entity.OrderStatusCompleted, productID).
+		Count(&count).Error
+	return count > 0, err
+}

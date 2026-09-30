@@ -11,4 +11,5 @@ type OrderRepository interface {
 	FindByID(id uuid.UUID) (*entity.Order, error)
 	Update(order *entity.Order) error
 	CancelOrderAndRollbackStock(order *entity.Order) error
+	HasCompletedOrderWithProduct(buyerID uuid.UUID, productID uuid.UUID) (bool, error)
 }
