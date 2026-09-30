@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -11,6 +12,7 @@ type Config struct {
 	App      AppConfig
 	Database DatabaseConfig
 	JWT      JWTConfig
+	CORS     CORSConfig
 }
 
 type AppConfig struct {
@@ -33,6 +35,10 @@ type JWTConfig struct {
 	SecretKey string
 }
 
+type CORSConfig struct {
+	AllowOrigins []string
+}
+
 func (d DatabaseConfig) DSN() string {
 	return fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
@@ -46,6 +52,9 @@ func (c *Config) validate() error {
 	}
 	if c.App.Env != "testing" && c.Database.Password == "" {
 		return fmt.Errorf("DB_PASSWORD is required")
+	}
+	if len(c.CORS.AllowOrigins) == 0 {
+		return fmt.Errorf("CORS_ALLOW_ORIGINS is required (comma-separated list of allowed origins)")
 	}
 	return nil
 }
@@ -71,6 +80,9 @@ func Load() (*Config, error) {
 		JWT: JWTConfig{
 			SecretKey: getEnv("JWT_SECRET", ""),
 		},
+		CORS: CORSConfig{
+			AllowOrigins: parseCommaSeparated(getEnv("CORS_ALLOW_ORIGINS", "")),
+		},
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -85,4 +97,18 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func parseCommaSeparated(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if trimmed := strings.TrimSpace(p); trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
 }
