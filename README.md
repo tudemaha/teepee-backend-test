@@ -42,50 +42,32 @@ marketplace-be/
 │   └── main.go                          # Entry point & dependency wiring
 ├── config/
 │   └── config.go                        # Load env vars into typed struct
+├── docs/
+│   └── swagger/                         # Modular OpenAPI 3.0 specs
+│       ├── openapi.yml
+│       ├── components/
+│       └── paths/
 ├── internal/
 │   ├── domain/
-│   │   ├── entity/                      # GORM DB models
-│   │   │   ├── user.go
-│   │   │   ├── shop.go
-│   │   │   ├── category.go
-│   │   │   ├── product.go
-│   │   │   ├── cart.go
-│   │   │   ├── order.go
-│   │   │   ├── order_detail.go
-│   │   │   ├── payment.go
-│   │   │   ├── review.go
-│   │   │   └── refresh_token.go
-│   │   └── repository/                  # Repository interfaces (contracts)
-│   │       ├── tx_manager.go            # Transaction manager interface
-│   │       └── ...
+│   │   ├── entity/                      # GORM DB models (User, Shop, Product, etc)
+│   │   └── repository/                  # Repository interfaces & tx manager
 │   ├── usecase/                         # Business logic layer
-│   │   ├── auth_usecase.go
-│   │   ├── shop_usecase.go
-│   │   ├── category_usecase.go
-│   │   ├── product_usecase.go
-│   │   ├── cart_usecase.go
-│   │   ├── order_usecase.go
-│   │   ├── payment_usecase.go
-│   │   └── review_usecase.go
-│   ├── repository/
-│   │   └── postgres/                    # GORM implementations
-│   │       ├── tx_manager.go            # Transaction manager (RunInTx)
-│   │       └── ...
 │   ├── delivery/
 │   │   └── http/
-│   │       ├── dto/                     # Request & Response DTOs
 │   │       ├── handler/                 # Echo route handlers
-│   │       └── middleware/              # JWT auth & role guard
-│   └── tests/
-│       ├── setup.go                     # Test server bootstrap (SQLite in-memory)
-│       └── e2e_marketplace_test.go      # Full E2E integration test suite
+│   │       └── dto/                     # Request/Response payloads
+│   ├── infrastructure/
+│   │   └── database/                    # Postgres connection, auto-migrate & seeder
+│   └── tests/                           # E2E integration tests (SQLite)
 ├── pkg/
-│   ├── jwt/                             # Token generation & validation
-│   ├── password/                        # bcrypt hash & compare
-│   ├── response/                        # Unified JSON response helpers
-│   └── validator/                       # Echo validator wrapper
-├── .env.example
-└── go.mod
+│   ├── apperror/                        # Custom errors mapped to HTTP statuses
+│   ├── utils/                           # Data mapping & JWT helpers
+│   └── validator/                       # Playground validator setup
+├── .air.toml                            # Air autoreload config
+├── docker-compose.yml                   # Docker Compose setup (DB + API)
+├── Dockerfile                           # Multi-stage Docker image
+├── redocly.yaml                         # Linting config for OpenAPI
+└── .env.example                         # Example environment variables
 ```
 
 ---
@@ -168,9 +150,11 @@ cp .env.example .env
 Edit `.env` with your values:
 
 ```env
+# App
 APP_PORT=8080
 APP_ENV=development
 
+# Database
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
@@ -178,13 +162,23 @@ DB_PASSWORD=yourpassword
 DB_NAME=teepee_marketplace
 DB_SSLMODE=disable
 
+# JWT
 JWT_SECRET=your-super-secret-key-change-in-production
 
+# CORS
 # Comma-separated list of allowed frontend origins
-CORS_ALLOW_ORIGINS=http://localhost:3000,http://localhost:5173
+# Use * for development only, test from Swagger UI
+CORS_ALLOW_ORIGINS=*
 
+# Seeder Defaults
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=admin123
+
+SELLER_EMAIL=seller@example.com
+SELLER_PASSWORD=seller123
+
+BUYER_EMAIL=buyer@example.com
+BUYER_PASSWORD=buyer123
 ```
 
 ### 3. Install dependencies
@@ -286,7 +280,7 @@ bunx @redocly/cli preview-docs docs/swagger/openapi.yml
 | `GET`    | `/api/v1/products/:id`              | —              | Get product by ID                       |
 | `POST`   | `/api/v1/products`                  | Seller         | Create a product                        |
 | `PUT`    | `/api/v1/products/:id`              | Seller (owner) | Full product update                     |
-| `PATCH`  | `/api/v1/products/:id/stock`        | Seller (owner) | Increment product stock                 |
+| `PATCH`  | `/api/v1/products/:id/stock`        | Seller (owner) | Add product stock                       |
 | `PATCH`  | `/api/v1/products/:id/availability` | Seller (owner) | Toggle product availability             |
 | `DELETE` | `/api/v1/products/:id`              | Seller (owner) | Soft delete product                     |
 | `GET`    | `/api/v1/products/:id/reviews`      | —              | Get reviews for a product               |
