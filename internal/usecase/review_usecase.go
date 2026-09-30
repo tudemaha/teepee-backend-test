@@ -3,12 +3,16 @@ package usecase
 import (
 	"errors"
 	"fmt"
+
 	"github.com/tudemaha/marketplace-be/pkg/apperror"
+
+	"context"
 
 	"github.com/google/uuid"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
 	"github.com/tudemaha/marketplace-be/internal/domain/entity"
 	"github.com/tudemaha/marketplace-be/internal/domain/repository"
+	"golang.org/x/sync/errgroup"
 )
 
 type ReviewUseCase interface {
@@ -32,14 +36,31 @@ func NewReviewUseCase(reviewRepo repository.ReviewRepository, orderRepo reposito
 }
 
 func (u *reviewUseCase) CreateReview(userID uuid.UUID, req *dto.CreateReviewRequest) (*dto.ReviewResponse, error) {
-	product, err := u.productRepo.FindByID(req.ProductID)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
-	}
 
-	hasCompleted, err := u.orderRepo.HasCompletedOrderWithProduct(userID, product.ID)
-	if err != nil || !hasCompleted {
-		return nil, fmt.Errorf("%w: %s", apperror.ErrForbidden, "user has no completed order for this product")
+	var hasCompleted bool
+
+	g, _ := errgroup.WithContext(context.Background())
+
+	g.Go(func() error {
+		var err error
+		_, err = u.productRepo.FindByID(req.ProductID)
+		if err != nil {
+			return fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		var err error
+		hasCompleted, err = u.orderRepo.HasCompletedOrderWithProduct(userID, req.ProductID)
+		if err != nil || !hasCompleted {
+			return fmt.Errorf("%w: %s", apperror.ErrForbidden, "user has no completed order for this product")
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
 	review := &entity.Review{
