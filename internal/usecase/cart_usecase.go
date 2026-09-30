@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
+	"github.com/tudemaha/marketplace-be/pkg/apperror"
 
 	"github.com/google/uuid"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
@@ -64,21 +66,21 @@ func (u *cartUseCase) GetMyCart(userID uuid.UUID) (*dto.CartResponse, error) {
 func (u *cartUseCase) AddToCart(userID uuid.UUID, req *dto.AddToCartRequest) error {
 	product, err := u.productRepo.FindByID(req.ProductID)
 	if err != nil || !product.Available {
-		return errors.New("product not found or unavailable")
+		return fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found or unavailable")
 	}
 
 	existingCart, err := u.cartRepo.FindByUserAndProduct(userID, req.ProductID)
 	if err == nil {
 		newQty := existingCart.Quantity + req.Quantity
 		if newQty > product.Stock {
-			return errors.New("insufficient stock")
+			return fmt.Errorf("%w: %s", apperror.ErrBadRequest, "insufficient stock")
 		}
 		existingCart.Quantity = newQty
 		return u.cartRepo.Update(existingCart)
 	}
 
 	if req.Quantity > product.Stock {
-		return errors.New("insufficient stock")
+		return fmt.Errorf("%w: %s", apperror.ErrBadRequest, "insufficient stock")
 	}
 
 	newCart := &entity.Cart{
@@ -94,7 +96,7 @@ func (u *cartUseCase) AddToCart(userID uuid.UUID, req *dto.AddToCartRequest) err
 func (u *cartUseCase) UpdateCartItem(userID uuid.UUID, cartID uuid.UUID, req *dto.UpdateCartRequest) error {
 	cart, err := u.cartRepo.FindByID(cartID)
 	if err != nil || cart.UserID != userID || cart.IsCheckedOut {
-		return errors.New("cart item not found")
+		return fmt.Errorf("%w: %s", apperror.ErrNotFound, "cart item not found")
 	}
 
 	product, err := u.productRepo.FindByID(cart.ProductID)
@@ -103,7 +105,7 @@ func (u *cartUseCase) UpdateCartItem(userID uuid.UUID, cartID uuid.UUID, req *dt
 	}
 
 	if req.Quantity > product.Stock {
-		return errors.New("insufficient stock")
+		return fmt.Errorf("%w: %s", apperror.ErrBadRequest, "insufficient stock")
 	}
 
 	cart.Quantity = req.Quantity
@@ -113,7 +115,7 @@ func (u *cartUseCase) UpdateCartItem(userID uuid.UUID, cartID uuid.UUID, req *dt
 func (u *cartUseCase) RemoveFromCart(userID uuid.UUID, cartID uuid.UUID) error {
 	cart, err := u.cartRepo.FindByID(cartID)
 	if err != nil || cart.UserID != userID || cart.IsCheckedOut {
-		return errors.New("cart item not found")
+		return fmt.Errorf("%w: %s", apperror.ErrNotFound, "cart item not found")
 	}
 
 	return u.cartRepo.Delete(cartID)

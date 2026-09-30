@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
+	"github.com/tudemaha/marketplace-be/pkg/apperror"
 
 	"github.com/google/uuid"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
@@ -35,14 +37,14 @@ func NewProductUseCase(productRepo repository.ProductRepository, shopRepo reposi
 func (u *productUseCase) Create(sellerID uuid.UUID, req *dto.CreateProductRequest) (*dto.ProductResponse, error) {
 	shop, err := u.shopRepo.FindByOwnerID(sellerID)
 	if err != nil {
-		return nil, errors.New("shop not found for this seller")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "shop not found for this seller")
 	}
 
 	var categories []entity.Category
 	for _, catID := range req.CategoryIDs {
 		cat, err := u.categoryRepo.FindByID(catID)
 		if err != nil {
-			return nil, errors.New("one or more categories not found")
+			return nil, fmt.Errorf("%w: %s", apperror.ErrBadRequest, "one or more categories not found")
 		}
 		categories = append(categories, *cat)
 	}
@@ -78,7 +80,7 @@ func (u *productUseCase) Create(sellerID uuid.UUID, req *dto.CreateProductReques
 func (u *productUseCase) GetByID(id uuid.UUID) (*dto.ProductResponse, error) {
 	product, err := u.productRepo.FindByID(id)
 	if err != nil {
-		return nil, errors.New("product not found")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
 	}
 	return utils.MapToProductResponse(product), nil
 }
@@ -103,12 +105,12 @@ func (u *productUseCase) GetAll(filter dto.ProductListFilter) ([]dto.ProductResp
 func (u *productUseCase) Update(sellerID uuid.UUID, productID uuid.UUID, req *dto.UpdateProductRequest) (*dto.ProductResponse, error) {
 	product, err := u.productRepo.FindByID(productID)
 	if err != nil {
-		return nil, errors.New("product not found")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
 	}
 
 	shop, err := u.shopRepo.FindByOwnerID(sellerID)
 	if err != nil || shop.ID != product.ShopID {
-		return nil, errors.New("unauthorized to update this product")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to update this product")
 	}
 
 	product.Name = req.Name
@@ -127,12 +129,12 @@ func (u *productUseCase) Update(sellerID uuid.UUID, productID uuid.UUID, req *dt
 func (u *productUseCase) Delete(sellerID uuid.UUID, productID uuid.UUID) error {
 	product, err := u.productRepo.FindByID(productID)
 	if err != nil {
-		return errors.New("product not found")
+		return fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
 	}
 
 	shop, err := u.shopRepo.FindByOwnerID(sellerID)
 	if err != nil || shop.ID != product.ShopID {
-		return errors.New("unauthorized to delete this product")
+		return fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to delete this product")
 	}
 
 	if err := u.productRepo.SoftDelete(productID); err != nil {

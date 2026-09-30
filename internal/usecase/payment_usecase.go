@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
+	"github.com/tudemaha/marketplace-be/pkg/apperror"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,11 +35,11 @@ func NewPaymentUseCase(paymentRepo repository.PaymentRepository, orderRepo repos
 func (u *paymentUseCase) CreatePayment(buyerID uuid.UUID, req *dto.CreatePaymentRequest) (*dto.PaymentResponse, error) {
 	order, err := u.orderRepo.FindByID(req.OrderID)
 	if err != nil || order.BuyerID != buyerID {
-		return nil, errors.New("order not found or unauthorized")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "order not found or unauthorized")
 	}
 
 	if order.Status != entity.OrderStatusPending {
-		return nil, errors.New("order is no longer pending")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrBadRequest, "order is no longer pending")
 	}
 
 	if existing, err := u.paymentRepo.FindByOrderID(req.OrderID); err == nil {
@@ -61,12 +63,12 @@ func (u *paymentUseCase) CreatePayment(buyerID uuid.UUID, req *dto.CreatePayment
 func (u *paymentUseCase) GetPaymentByOrderID(buyerID uuid.UUID, orderID uuid.UUID) (*dto.PaymentResponse, error) {
 	order, err := u.orderRepo.FindByID(orderID)
 	if err != nil || order.BuyerID != buyerID {
-		return nil, errors.New("order not found or unauthorized")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "order not found or unauthorized")
 	}
 
 	payment, err := u.paymentRepo.FindByOrderID(orderID)
 	if err != nil {
-		return nil, errors.New("payment not found")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "payment not found")
 	}
 
 	return mapToPaymentResponse(payment), nil
@@ -75,17 +77,17 @@ func (u *paymentUseCase) GetPaymentByOrderID(buyerID uuid.UUID, orderID uuid.UUI
 func (u *paymentUseCase) UpdatePaymentStatus(adminID uuid.UUID, paymentID uuid.UUID, req *dto.UpdatePaymentStatusRequest) error {
 	adminUser, err := u.userRepo.FindByID(adminID)
 	if err != nil || adminUser.Role != entity.RoleAdmin {
-		return errors.New("unauthorized")
+		return fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized")
 	}
 
 	payment, err := u.paymentRepo.FindByID(paymentID)
 	if err != nil {
-		return errors.New("payment not found")
+		return fmt.Errorf("%w: %s", apperror.ErrNotFound, "payment not found")
 	}
 
 	order, err := u.orderRepo.FindByID(payment.OrderID)
 	if err != nil {
-		return errors.New("order not found")
+		return fmt.Errorf("%w: %s", apperror.ErrNotFound, "order not found")
 	}
 
 	newStatus := entity.PaymentStatus(req.Status)

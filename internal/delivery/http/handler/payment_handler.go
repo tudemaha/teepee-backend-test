@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -8,6 +9,7 @@ import (
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/middleware"
 	"github.com/tudemaha/marketplace-be/internal/usecase"
+	"github.com/tudemaha/marketplace-be/pkg/apperror"
 	"github.com/tudemaha/marketplace-be/pkg/response"
 	"github.com/tudemaha/marketplace-be/pkg/validator"
 )
@@ -43,10 +45,10 @@ func (h *PaymentHandler) CreatePayment(c *echo.Context) error {
 
 	res, err := h.paymentUC.CreatePayment(buyerID, &req)
 	if err != nil {
-		if err.Error() == "order not found or unauthorized" {
+		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}
-		if err.Error() == "order is no longer pending" {
+		if errors.Is(err, apperror.ErrBadRequest) {
 			return response.Error(c, http.StatusBadRequest, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
@@ -67,7 +69,7 @@ func (h *PaymentHandler) GetPaymentByOrderID(c *echo.Context) error {
 
 	res, err := h.paymentUC.GetPaymentByOrderID(buyerID, orderID)
 	if err != nil {
-		if err.Error() == "order not found or unauthorized" || err.Error() == "payment not found" {
+		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
@@ -95,10 +97,10 @@ func (h *PaymentHandler) UpdatePaymentStatus(c *echo.Context) error {
 	}
 
 	if err := h.paymentUC.UpdatePaymentStatus(adminID, paymentID, &req); err != nil {
-		if err.Error() == "unauthorized" {
+		if errors.Is(err, apperror.ErrForbidden) {
 			return response.Error(c, http.StatusForbidden, err.Error(), nil)
 		}
-		if err.Error() == "payment not found" || err.Error() == "order not found" {
+		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/middleware"
 	"github.com/tudemaha/marketplace-be/internal/usecase"
+	"github.com/tudemaha/marketplace-be/pkg/apperror"
 	"github.com/tudemaha/marketplace-be/pkg/response"
 	"github.com/tudemaha/marketplace-be/pkg/validator"
 )
@@ -46,10 +48,10 @@ func (h *ProductHandler) Create(c *echo.Context) error {
 
 	res, err := h.productUC.Create(userID, &req)
 	if err != nil {
-		if err.Error() == "shop not found for this seller" {
+		if errors.Is(err, apperror.ErrForbidden) {
 			return response.Error(c, http.StatusForbidden, err.Error(), nil)
 		}
-		if err.Error() == "one or more categories not found" {
+		if errors.Is(err, apperror.ErrBadRequest) {
 			return response.Error(c, http.StatusBadRequest, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
@@ -119,10 +121,10 @@ func (h *ProductHandler) Update(c *echo.Context) error {
 
 	res, err := h.productUC.Update(userID, productID, &req)
 	if err != nil {
-		if err.Error() == "product not found" {
+		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}
-		if err.Error() == "unauthorized to update this product" {
+		if errors.Is(err, apperror.ErrForbidden) {
 			return response.Error(c, http.StatusForbidden, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
@@ -142,10 +144,10 @@ func (h *ProductHandler) Delete(c *echo.Context) error {
 	}
 
 	if err := h.productUC.Delete(userID, productID); err != nil {
-		if err.Error() == "product not found" {
+		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}
-		if err.Error() == "unauthorized to delete this product" {
+		if errors.Is(err, apperror.ErrForbidden) {
 			return response.Error(c, http.StatusForbidden, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)

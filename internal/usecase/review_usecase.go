@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
+	"github.com/tudemaha/marketplace-be/pkg/apperror"
 
 	"github.com/google/uuid"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
@@ -32,12 +34,12 @@ func NewReviewUseCase(reviewRepo repository.ReviewRepository, orderRepo reposito
 func (u *reviewUseCase) CreateReview(userID uuid.UUID, req *dto.CreateReviewRequest) (*dto.ReviewResponse, error) {
 	product, err := u.productRepo.FindByID(req.ProductID)
 	if err != nil {
-		return nil, errors.New("product not found")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
 	}
 
 	hasCompleted, err := u.orderRepo.HasCompletedOrderWithProduct(userID, product.ID)
 	if err != nil || !hasCompleted {
-		return nil, errors.New("user has no completed order for this product")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrForbidden, "user has no completed order for this product")
 	}
 
 	review := &entity.Review{
@@ -48,7 +50,7 @@ func (u *reviewUseCase) CreateReview(userID uuid.UUID, req *dto.CreateReviewRequ
 	}
 
 	if err := u.reviewRepo.Create(review); err != nil {
-		return nil, errors.New("failed to create review, user may have already reviewed this product")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrConflict, "failed to create review, user may have already reviewed this product")
 	}
 
 	return &dto.ReviewResponse{
@@ -106,7 +108,7 @@ func (u *reviewUseCase) DeleteReview(userID uuid.UUID, reviewID uuid.UUID) error
 	}
 
 	if review.UserID != userID {
-		return errors.New("unauthorized to delete this review")
+		return fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to delete this review")
 	}
 
 	return u.reviewRepo.Delete(reviewID)

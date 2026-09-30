@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -8,6 +9,7 @@ import (
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/middleware"
 	"github.com/tudemaha/marketplace-be/internal/usecase"
+	"github.com/tudemaha/marketplace-be/pkg/apperror"
 	"github.com/tudemaha/marketplace-be/pkg/response"
 	"github.com/tudemaha/marketplace-be/pkg/validator"
 )
@@ -45,10 +47,10 @@ func (h *OrderHandler) Checkout(c *echo.Context) error {
 
 	res, err := h.orderUC.Checkout(userID, &req)
 	if err != nil {
-		if err.Error() == "cart is empty" || err.Error() == "insufficient stock for one or more items during checkout" {
+		if errors.Is(err, apperror.ErrBadRequest) {
 			return response.Error(c, http.StatusBadRequest, err.Error(), nil)
 		}
-		if len(err.Error()) > 18 && err.Error()[:18] == "insufficient stock" {
+		if errors.Is(err, apperror.ErrBadRequest) {
 			return response.Error(c, http.StatusBadRequest, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
@@ -84,7 +86,7 @@ func (h *OrderHandler) GetByID(c *echo.Context) error {
 		if err.Error() == "unauthorized to view this order" {
 			return response.Error(c, http.StatusForbidden, err.Error(), nil)
 		}
-		if err.Error() == "order not found" {
+		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
@@ -113,13 +115,13 @@ func (h *OrderHandler) UpdateStatus(c *echo.Context) error {
 	}
 
 	if err := h.orderUC.UpdateStatus(userID, role, orderID, &req); err != nil {
-		if err.Error() == "order not found" {
+		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}
-		if err.Error()[:12] == "unauthorized" {
+		if errors.Is(err, apperror.ErrForbidden) {
 			return response.Error(c, http.StatusForbidden, err.Error(), nil)
 		}
-		if err.Error() == "only pending orders can be cancelled" {
+		if errors.Is(err, apperror.ErrBadRequest) {
 			return response.Error(c, http.StatusBadRequest, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)

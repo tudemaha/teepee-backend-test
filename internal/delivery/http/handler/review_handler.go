@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -8,6 +9,7 @@ import (
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/middleware"
 	"github.com/tudemaha/marketplace-be/internal/usecase"
+	"github.com/tudemaha/marketplace-be/pkg/apperror"
 	"github.com/tudemaha/marketplace-be/pkg/response"
 	"github.com/tudemaha/marketplace-be/pkg/validator"
 )
@@ -44,13 +46,13 @@ func (h *ReviewHandler) CreateReview(c *echo.Context) error {
 
 	res, err := h.reviewUC.CreateReview(userID, &req)
 	if err != nil {
-		if err.Error() == "product not found" {
+		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}
-		if err.Error() == "user has no completed order for this product" {
+		if errors.Is(err, apperror.ErrForbidden) {
 			return response.Error(c, http.StatusForbidden, err.Error(), nil)
 		}
-		if err.Error()[:23] == "failed to create review" {
+		if errors.Is(err, apperror.ErrConflict) {
 			return response.Error(c, http.StatusConflict, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
@@ -85,10 +87,10 @@ func (h *ReviewHandler) DeleteReview(c *echo.Context) error {
 	}
 
 	if err := h.reviewUC.DeleteReview(userID, reviewID); err != nil {
-		if err.Error() == "unauthorized to delete this review" {
+		if errors.Is(err, apperror.ErrForbidden) {
 			return response.Error(c, http.StatusForbidden, err.Error(), nil)
 		}
-		if err.Error() == "review not found" {
+		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)

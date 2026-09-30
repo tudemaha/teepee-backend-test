@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
+	"github.com/tudemaha/marketplace-be/pkg/apperror"
 
 	"github.com/google/uuid"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
@@ -29,7 +31,7 @@ func NewShopUseCase(shopRepo repository.ShopRepository, userRepo repository.User
 
 func (u *shopUseCase) Create(ownerID uuid.UUID, req *dto.CreateShopRequest) (*dto.ShopResponse, error) {
 	if _, err := u.shopRepo.FindByOwnerID(ownerID); err == nil {
-		return nil, errors.New("user already has a shop")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrConflict, "user already has a shop")
 	}
 
 	shop := &entity.Shop{
@@ -61,7 +63,7 @@ func (u *shopUseCase) Create(ownerID uuid.UUID, req *dto.CreateShopRequest) (*dt
 func (u *shopUseCase) GetByID(id uuid.UUID) (*dto.ShopResponse, error) {
 	shop, err := u.shopRepo.FindByID(id)
 	if err != nil {
-		return nil, errors.New("shop not found")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "shop not found")
 	}
 
 	return &dto.ShopResponse{
@@ -76,11 +78,11 @@ func (u *shopUseCase) GetByID(id uuid.UUID) (*dto.ShopResponse, error) {
 func (u *shopUseCase) Update(ownerID uuid.UUID, shopID uuid.UUID, req *dto.UpdateShopRequest) (*dto.ShopResponse, error) {
 	shop, err := u.shopRepo.FindByID(shopID)
 	if err != nil {
-		return nil, errors.New("shop not found")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "shop not found")
 	}
 
 	if shop.OwnerID != ownerID {
-		return nil, errors.New("unauthorized to update this shop")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to update this shop")
 	}
 
 	shop.Name = req.Name

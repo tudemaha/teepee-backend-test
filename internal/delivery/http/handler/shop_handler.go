@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -8,6 +9,7 @@ import (
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/middleware"
 	"github.com/tudemaha/marketplace-be/internal/usecase"
+	"github.com/tudemaha/marketplace-be/pkg/apperror"
 	"github.com/tudemaha/marketplace-be/pkg/response"
 	"github.com/tudemaha/marketplace-be/pkg/validator"
 )
@@ -50,7 +52,7 @@ func (h *ShopHandler) Create(c *echo.Context) error {
 
 	res, err := h.shopUC.Create(userID, &req)
 	if err != nil {
-		if err.Error() == "user already has a shop" {
+		if errors.Is(err, apperror.ErrConflict) {
 			return response.Error(c, http.StatusConflict, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
@@ -101,10 +103,10 @@ func (h *ShopHandler) Update(c *echo.Context) error {
 
 	res, err := h.shopUC.Update(userID, shopID, &req)
 	if err != nil {
-		if err.Error() == "shop not found" {
+		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}
-		if err.Error() == "unauthorized to update this shop" {
+		if errors.Is(err, apperror.ErrForbidden) {
 			return response.Error(c, http.StatusForbidden, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)

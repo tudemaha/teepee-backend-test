@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
+	"github.com/tudemaha/marketplace-be/pkg/apperror"
 
 	"github.com/google/uuid"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
@@ -42,11 +44,11 @@ func (u *orderUseCase) Checkout(buyerID uuid.UUID, req *dto.CheckoutRequest) (*d
 	if req.ProductID != nil && req.Quantity != nil {
 		product, err := u.productRepo.FindByID(*req.ProductID)
 		if err != nil || !product.Available {
-			return nil, errors.New("product not found or unavailable")
+			return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found or unavailable")
 		}
 
 		if *req.Quantity > product.Stock {
-			return nil, errors.New("insufficient stock for " + product.Name)
+			return nil, fmt.Errorf("%w: %s%s", apperror.ErrBadRequest, "insufficient stock for ", product.Name)
 		}
 
 		subtotal := float64(*req.Quantity) * product.Price
@@ -63,7 +65,7 @@ func (u *orderUseCase) Checkout(buyerID uuid.UUID, req *dto.CheckoutRequest) (*d
 		// checkout from items in cart
 		carts, err := u.cartRepo.FindActiveByUserID(buyerID)
 		if err != nil || len(carts) == 0 {
-			return nil, errors.New("cart is empty")
+			return nil, fmt.Errorf("%w: %s", apperror.ErrBadRequest, "cart is empty")
 		}
 
 		if len(req.CartItemIDs) > 0 {
@@ -80,14 +82,14 @@ func (u *orderUseCase) Checkout(buyerID uuid.UUID, req *dto.CheckoutRequest) (*d
 			}
 
 			if len(filtered) == 0 {
-				return nil, errors.New("selected cart items are invalid or already checked out")
+				return nil, fmt.Errorf("%w: %s", apperror.ErrBadRequest, "selected cart items are invalid or already checked out")
 			}
 			carts = filtered
 		}
 
 		for _, c := range carts {
 			if c.Quantity > c.Product.Stock {
-				return nil, errors.New("insufficient stock for " + c.Product.Name)
+				return nil, fmt.Errorf("%w: %s%s", apperror.ErrBadRequest, "insufficient stock for ", c.Product.Name)
 			}
 
 			subtotal := float64(c.Quantity) * c.Product.Price
@@ -143,11 +145,11 @@ func (u *orderUseCase) GetMyOrders(buyerID uuid.UUID) ([]dto.OrderResponse, erro
 func (u *orderUseCase) GetByID(buyerID uuid.UUID, orderID uuid.UUID) (*dto.OrderResponse, error) {
 	order, err := u.orderRepo.FindByID(orderID)
 	if err != nil {
-		return nil, errors.New("order not found")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "order not found")
 	}
 
 	if order.BuyerID != buyerID {
-		return nil, errors.New("unauthorized to view this order")
+		return nil, fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to view this order")
 	}
 
 	return mapToOrderResponse(order), nil
@@ -189,7 +191,7 @@ func mapToOrderSummaryResponse(o *entity.Order) *dto.OrderResponse {
 func (u *orderUseCase) UpdateStatus(userID uuid.UUID, role string, orderID uuid.UUID, req *dto.UpdateOrderStatusRequest) error {
 	order, err := u.orderRepo.FindByID(orderID)
 	if err != nil {
-		return errors.New("order not found")
+		return fmt.Errorf("%w: %s", apperror.ErrNotFound, "order not found")
 	}
 
 	newStatus := entity.OrderStatus(req.Status)
@@ -201,19 +203,19 @@ func (u *orderUseCase) UpdateStatus(userID uuid.UUID, role string, orderID uuid.
 	case entity.OrderStatusCancelled:
 		if role == string(entity.RoleBuyer) {
 			if order.BuyerID != userID {
-				return errors.New("unauthorized to cancel this order")
+				return fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to cancel this order")
 			}
 			if order.Status != entity.OrderStatusPending {
-				return errors.New("only pending orders can be cancelled")
+				return fmt.Errorf("%w: %s", apperror.ErrBadRequest, "only pending orders can be cancelled")
 			}
 		}
 	case entity.OrderStatusConfirmed, entity.OrderStatusShipped, entity.OrderStatusDelivered:
 		if role != string(entity.RoleAdmin) && role != string(entity.RoleSeller) {
-			return errors.New("unauthorized to update fulfillment status")
+			return fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to update fulfillment status")
 		}
 	case entity.OrderStatusCompleted:
 		if role == string(entity.RoleBuyer) && order.BuyerID != userID {
-			return errors.New("unauthorized to complete this order")
+			return fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to complete this order")
 		}
 	}
 

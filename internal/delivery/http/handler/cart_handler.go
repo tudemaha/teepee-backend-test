@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -8,6 +9,7 @@ import (
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/middleware"
 	"github.com/tudemaha/marketplace-be/internal/usecase"
+	"github.com/tudemaha/marketplace-be/pkg/apperror"
 	"github.com/tudemaha/marketplace-be/pkg/response"
 	"github.com/tudemaha/marketplace-be/pkg/validator"
 )
@@ -56,7 +58,7 @@ func (h *CartHandler) AddToCart(c *echo.Context) error {
 	}
 
 	if err := h.cartUC.AddToCart(userID, &req); err != nil {
-		if err.Error() == "product not found or unavailable" || err.Error() == "insufficient stock" {
+		if errors.Is(err, apperror.ErrBadRequest) {
 			return response.Error(c, http.StatusBadRequest, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
@@ -84,10 +86,10 @@ func (h *CartHandler) UpdateCartItem(c *echo.Context) error {
 	}
 
 	if err := h.cartUC.UpdateCartItem(userID, cartID, &req); err != nil {
-		if err.Error() == "cart item not found" {
+		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}
-		if err.Error() == "insufficient stock" {
+		if errors.Is(err, apperror.ErrBadRequest) {
 			return response.Error(c, http.StatusBadRequest, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
@@ -107,7 +109,7 @@ func (h *CartHandler) RemoveFromCart(c *echo.Context) error {
 	}
 
 	if err := h.cartUC.RemoveFromCart(userID, cartID); err != nil {
-		if err.Error() == "cart item not found" {
+		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}
 		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
