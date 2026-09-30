@@ -1,0 +1,8 @@
+apis:
+  main:
+    root: docs/swagger/openapi.yml
+
+rules:
+  info-license: off
+  no-server-example.com: off
+  no-server-localhost: off

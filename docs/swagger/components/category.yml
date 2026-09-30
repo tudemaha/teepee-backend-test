@@ -1,0 +1,23 @@
+schemas:
+  CreateCategoryRequest:
+    type: object
+    required: [name]
+    properties:
+      name:
+        type: string
+        minLength: 2
+        example: "Electronics"
+
+  CategoryResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120002"
+      name:
+        type: string
+        example: "Electronics"
+      slug:
+        type: string
+        example: "electronics"

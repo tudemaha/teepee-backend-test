@@ -1,0 +1,315 @@
+products:
+  get:
+    operationId: listProducts
+    tags: [Product]
+    summary: List all available products
+    parameters:
+      - name: search
+        in: query
+        schema:
+          type: string
+        description: Keyword search on product name
+      - name: shop_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Filter by shop
+      - name: category_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Filter by category
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          default: 0
+    responses:
+      "200":
+        description: Products fetched successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: "../components/product.yml#/schemas/ProductResponse"
+
+  post:
+    operationId: createProduct
+    tags: [Product]
+    summary: Create a new product (seller/admin only)
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/product.yml#/schemas/CreateProductRequest"
+    responses:
+      "201":
+        description: Product created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/product.yml#/schemas/ProductResponse"
+      "400":
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "403":
+        description: Forbidden — seller or admin role required
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+productsId:
+  get:
+    operationId: getProductById
+    tags: [Product]
+    summary: Get product by ID
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Product fetched successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/product.yml#/schemas/ProductResponse"
+      "404":
+        description: Product not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+  put:
+    operationId: updateProduct
+    tags: [Product]
+    summary: Full product update (owner only)
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/product.yml#/schemas/UpdateProductRequest"
+    responses:
+      "200":
+        description: Product updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/product.yml#/schemas/ProductResponse"
+      "403":
+        description: Forbidden — not the shop owner
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "404":
+        description: Product not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+  delete:
+    operationId: deleteProduct
+    tags: [Product]
+    summary: Soft delete product — sets available=false (owner only)
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Product deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+      "403":
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "404":
+        description: Product not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+productsIdStock:
+  patch:
+    operationId: updateProductStock
+    tags: [Product]
+    summary: Increment product stock (owner only)
+    description: Adds the given `stock` value to the existing stock — additive, not a replacement.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/product.yml#/schemas/UpdateProductStockRequest"
+    responses:
+      "200":
+        description: Stock updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/product.yml#/schemas/ProductResponse"
+      "403":
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "404":
+        description: Product not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+productsIdAvailability:
+  patch:
+    operationId: updateProductAvailability
+    tags: [Product]
+    summary: Toggle product availability (owner only)
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/product.yml#/schemas/UpdateProductAvailabilityRequest"
+    responses:
+      "200":
+        description: Availability updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/product.yml#/schemas/ProductResponse"
+      "403":
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "404":
+        description: Product not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+productsIdReviews:
+  get:
+    operationId: getProductReviews
+    tags: [Review]
+    summary: Get reviews for a product
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Reviews fetched successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/review.yml#/schemas/ProductReviewsResponse"
+      "404":
+        description: Product not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+

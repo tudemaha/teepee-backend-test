@@ -1,0 +1,152 @@
+register:
+  post:
+    operationId: registerUser
+    tags: [Auth]
+    summary: Register a new user
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/auth.yml#/schemas/RegisterRequest"
+    responses:
+      "201":
+        description: User registered successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/auth.yml#/schemas/TokenResponse"
+      "400":
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "409":
+        description: Email already in use
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+login:
+  post:
+    operationId: loginUser
+    tags: [Auth]
+    summary: Login with email and password
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/auth.yml#/schemas/LoginRequest"
+    responses:
+      "200":
+        description: Login successful
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/auth.yml#/schemas/TokenResponse"
+      "400":
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "401":
+        description: Invalid credentials
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+refresh:
+  post:
+    operationId: refreshToken
+    tags: [Auth]
+    summary: Refresh access token using a valid refresh token
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/auth.yml#/schemas/RefreshRequest"
+    responses:
+      "200":
+        description: Token refreshed successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/auth.yml#/schemas/TokenResponse"
+      "401":
+        description: Invalid or expired refresh token
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+logout:
+  post:
+    operationId: logoutUser
+    tags: [Auth]
+    summary: Revoke refresh token (logout)
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/auth.yml#/schemas/RefreshRequest"
+    responses:
+      "200":
+        description: Logout successful
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+      "500":
+        description: Failed to revoke token
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+me:
+  get:
+    operationId: getMyProfile
+    tags: [Auth]
+    summary: Get authenticated user's profile
+    security:
+      - BearerAuth: []
+    responses:
+      "200":
+        description: Profile fetched successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/auth.yml#/schemas/UserProfileResponse"
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"

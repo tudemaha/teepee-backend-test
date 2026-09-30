@@ -1,0 +1,90 @@
+categories:
+  get:
+    operationId: listCategories
+    tags: [Category]
+    summary: List all categories
+    responses:
+      "200":
+        description: Categories fetched successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: "../components/category.yml#/schemas/CategoryResponse"
+
+  post:
+    operationId: createCategory
+    tags: [Category]
+    summary: Create a new category (admin only)
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/category.yml#/schemas/CreateCategoryRequest"
+    responses:
+      "201":
+        description: Category created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/category.yml#/schemas/CategoryResponse"
+      "400":
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "403":
+        description: Forbidden — admin role required
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+categoriesId:
+  delete:
+    operationId: deleteCategory
+    tags: [Category]
+    summary: Delete a category (admin only)
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Category deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+      "403":
+        description: Forbidden — admin role required
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "404":
+        description: Category not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"

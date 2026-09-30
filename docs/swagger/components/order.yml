@@ -1,0 +1,84 @@
+schemas:
+  CheckoutRequest:
+    type: object
+    required: [shipping_address]
+    properties:
+      shipping_address:
+        type: string
+        example: "Jl. Kebon Jeruk No. 10, Jakarta Barat"
+      cart_item_ids:
+        type: array
+        description: Specific cart item IDs to checkout. If omitted, all active items are checked out.
+        items:
+          type: string
+          format: uuid
+        example: ["01927e4b-3c8a-7f11-a1b2-0242ac120020"]
+      product_id:
+        type: string
+        format: uuid
+        description: Direct product checkout (buy now), mutually exclusive with cart_item_ids
+      quantity:
+        type: integer
+        minimum: 1
+        description: Required when using direct product_id checkout
+
+  UpdateOrderStatusRequest:
+    type: object
+    required: [status]
+    properties:
+      status:
+        type: string
+        enum: [pending, confirmed, shipped, delivered, completed, cancelled]
+        example: confirmed
+
+  OrderDetailResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120030"
+      product_id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120005"
+      product:
+        $ref: "../components/product.yml#/schemas/ProductResponse"
+      quantity:
+        type: integer
+        example: 2
+      unit_price:
+        type: integer
+        format: int64
+        example: 19999000
+      subtotal:
+        type: integer
+        format: int64
+        example: 39998000
+
+  OrderResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120025"
+      status:
+        type: string
+        enum: [pending, confirmed, shipped, delivered, completed, cancelled]
+        example: pending
+      total_amount:
+        type: integer
+        format: int64
+        example: 39998000
+      shipping_address:
+        type: string
+        example: "Jl. Kebon Jeruk No. 10, Jakarta Barat"
+      created_at:
+        type: string
+        format: date-time
+        example: "2026-09-30T10:00:00Z"
+      details:
+        type: array
+        items:
+          $ref: "#/schemas/OrderDetailResponse"
