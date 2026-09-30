@@ -5,7 +5,7 @@ import "github.com/google/uuid"
 type CreateProductRequest struct {
 	Name        string      `json:"name" validate:"required,min=2"`
 	Description string      `json:"description" validate:"omitempty"`
-	Price       float64     `json:"price" validate:"required,gt=0"`
+	Price       int64       `json:"price" validate:"required,gt=0"`
 	Stock       int         `json:"stock" validate:"gte=0"`
 	CategoryIDs []uuid.UUID `json:"category_ids" validate:"required,min=1"`
 	ImageURLs   []string    `json:"image_urls" validate:"omitempty"`
@@ -14,7 +14,7 @@ type CreateProductRequest struct {
 type UpdateProductRequest struct {
 	Name        string      `json:"name" validate:"required,min=2"`
 	Description string      `json:"description" validate:"omitempty"`
-	Price       float64     `json:"price" validate:"required,gt=0"`
+	Price       int64       `json:"price" validate:"required,gt=0"`
 	Stock       int         `json:"stock" validate:"gte=0"`
 	CategoryIDs []uuid.UUID `json:"category_ids" validate:"required,min=1"`
 }
@@ -29,7 +29,7 @@ type ProductResponse struct {
 	ID          uuid.UUID              `json:"id"`
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`
-	Price       float64                `json:"price"`
+	Price       int64                  `json:"price"`
 	Stock       int                    `json:"stock"`
 	Status      string                 `json:"status"`
 	ShopID      uuid.UUID              `json:"shop_id"`

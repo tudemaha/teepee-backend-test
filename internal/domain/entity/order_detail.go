@@ -10,8 +10,8 @@ import (
 type OrderDetail struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
 	Quantity  int       `gorm:"not null"`
-	UnitPrice float64   `gorm:"not null"`
-	Subtotal  float64   `gorm:"not null"`
+	UnitPrice int64     `gorm:"not null"`
+	Subtotal  int64     `gorm:"not null"`
 	OrderID   uuid.UUID `gorm:"type:uuid;not null"`
 	ProductID uuid.UUID `gorm:"type:uuid;not null"`
 	CreatedAt time.Time ``

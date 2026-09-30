@@ -3,6 +3,7 @@ package usecase
 import (
 	"errors"
 	"fmt"
+
 	"github.com/tudemaha/marketplace-be/pkg/apperror"
 
 	"github.com/google/uuid"
@@ -36,7 +37,7 @@ func NewOrderUseCase(orderRepo repository.OrderRepository, cartRepo repository.C
 }
 
 func (u *orderUseCase) Checkout(buyerID uuid.UUID, req *dto.CheckoutRequest) (*dto.OrderResponse, error) {
-	var totalAmount float64
+	var totalAmount int64
 	var orderDetails []entity.OrderDetail
 	var cartIDs []uuid.UUID
 
@@ -51,7 +52,7 @@ func (u *orderUseCase) Checkout(buyerID uuid.UUID, req *dto.CheckoutRequest) (*d
 			return nil, fmt.Errorf("%w: %s%s", apperror.ErrBadRequest, "insufficient stock for ", product.Name)
 		}
 
-		subtotal := float64(*req.Quantity) * product.Price
+		subtotal := int64(*req.Quantity) * product.Price
 		totalAmount = subtotal
 
 		orderDetails = append(orderDetails, entity.OrderDetail{
@@ -92,7 +93,7 @@ func (u *orderUseCase) Checkout(buyerID uuid.UUID, req *dto.CheckoutRequest) (*d
 				return nil, fmt.Errorf("%w: %s%s", apperror.ErrBadRequest, "insufficient stock for ", c.Product.Name)
 			}
 
-			subtotal := float64(c.Quantity) * c.Product.Price
+			subtotal := int64(c.Quantity) * c.Product.Price
 			totalAmount += subtotal
 
 			orderDetails = append(orderDetails, entity.OrderDetail{

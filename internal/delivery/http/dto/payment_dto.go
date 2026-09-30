@@ -2,6 +2,7 @@ package dto
 
 import (
 	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -17,7 +18,7 @@ type UpdatePaymentStatusRequest struct {
 type PaymentResponse struct {
 	ID        uuid.UUID  `json:"id"`
 	OrderID   uuid.UUID  `json:"order_id"`
-	Amount    float64    `json:"amount"`
+	Amount    int64      `json:"amount"`
 	Method    string     `json:"method"`
 	Status    string     `json:"status"`
 	PaidAt    *time.Time `json:"paid_at,omitempty"`

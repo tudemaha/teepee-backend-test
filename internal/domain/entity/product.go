@@ -19,7 +19,7 @@ type Product struct {
 	ID          uuid.UUID      `gorm:"type:uuid;primaryKey"`
 	Name        string         `gorm:"not null"`
 	Description string         ``
-	Price       float64        `gorm:"not null;check:price > 0"`
+	Price       int64          `gorm:"not null;check:price > 0"`
 	Stock       int            `gorm:"not null;default:0;check:stock >= 0"`
 	Available   bool           `gorm:"default:true"`
 	ShopID      uuid.UUID      `gorm:"type:uuid;not null"`

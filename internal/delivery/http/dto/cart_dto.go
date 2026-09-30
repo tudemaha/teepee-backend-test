@@ -16,10 +16,10 @@ type CartItemResponse struct {
 	ProductID uuid.UUID       `json:"product_id"`
 	Product   ProductResponse `json:"product"`
 	Quantity  int             `json:"quantity"`
-	Subtotal  float64         `json:"subtotal"`
+	Subtotal  int64           `json:"subtotal"`
 }
 
 type CartResponse struct {
 	Items      []CartItemResponse `json:"items"`
-	TotalPrice float64            `json:"total_price"`
+	TotalPrice int64              `json:"total_price"`
 }

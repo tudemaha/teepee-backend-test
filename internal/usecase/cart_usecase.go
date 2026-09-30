@@ -3,6 +3,7 @@ package usecase
 import (
 	"errors"
 	"fmt"
+
 	"github.com/tudemaha/marketplace-be/pkg/apperror"
 
 	"github.com/google/uuid"
@@ -37,11 +38,11 @@ func (u *cartUseCase) GetMyCart(userID uuid.UUID) (*dto.CartResponse, error) {
 		return nil, errors.New("failed to fetch cart")
 	}
 
-	var total float64
+	var total int64
 	var items []dto.CartItemResponse
 
 	for _, c := range carts {
-		subtotal := float64(c.Quantity) * c.Product.Price
+		subtotal := int64(c.Quantity) * c.Product.Price
 		total += subtotal
 
 		items = append(items, dto.CartItemResponse{

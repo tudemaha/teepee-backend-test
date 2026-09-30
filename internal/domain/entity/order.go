@@ -22,7 +22,7 @@ type Order struct {
 	ID              uuid.UUID     `gorm:"type:uuid;primaryKey"`
 	BuyerID         uuid.UUID     `gorm:"type:uuid;not null"`
 	Status          OrderStatus   `gorm:"type:varchar(20);default:'pending'"`
-	TotalAmount     float64       `gorm:"not null"`
+	TotalAmount     int64         `gorm:"not null"`
 	ShippingAddress string        `gorm:"not null"`
 	CreatedAt       time.Time     ``
 	UpdatedAt       time.Time     ``

@@ -23,7 +23,7 @@ const (
 type Payment struct {
 	ID        uuid.UUID     `gorm:"type:uuid;primaryKey"`
 	OrderID   uuid.UUID     `gorm:"type:uuid;not null;uniqueIndex"`
-	Amount    float64       `gorm:"not null"`
+	Amount    int64         `gorm:"not null"`
 	Method    PaymentMethod `gorm:"type:varchar(30)"`
 	Status    PaymentStatus `gorm:"type:varchar(20);default:'pending'"`
 	PaidAt    *time.Time    ``
