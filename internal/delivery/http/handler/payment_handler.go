@@ -97,7 +97,7 @@ func (h *PaymentHandler) UpdatePaymentStatus(c *echo.Context) error {
 		return response.Error(c, http.StatusBadRequest, "validation failed", validator.FormatErrors(err))
 	}
 
-	if err := h.paymentUC.UpdatePaymentStatus(userID, role, paymentID, &req); err != nil {
+	if err := h.paymentUC.UpdatePaymentStatus(c.Request().Context(), userID, role, paymentID, &req); err != nil {
 		if errors.Is(err, apperror.ErrForbidden) {
 			return response.Error(c, http.StatusForbidden, err.Error(), nil)
 		}

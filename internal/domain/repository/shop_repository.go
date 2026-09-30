@@ -1,5 +1,7 @@
 package repository
 
+import "context"
+
 import (
 
 	"github.com/google/uuid"
@@ -7,7 +9,7 @@ import (
 )
 
 type ShopRepository interface {
-	Create(shop *entity.Shop) error
+	Create(ctx context.Context, shop *entity.Shop) error
 	FindByID(id uuid.UUID) (*entity.Shop, error)
 	FindByOwnerID(ownerID uuid.UUID) (*entity.Shop, error)
 	Update(shop *entity.Shop) error

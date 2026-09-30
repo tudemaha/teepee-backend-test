@@ -1,5 +1,7 @@
 package usecase
 
+import "context"
+
 import (
 	"errors"
 	"fmt"
@@ -12,24 +14,26 @@ import (
 )
 
 type ShopUseCase interface {
-	Create(ownerID uuid.UUID, req *dto.CreateShopRequest) (*dto.ShopResponse, error)
+	Create(ctx context.Context, ownerID uuid.UUID, req *dto.CreateShopRequest) (*dto.ShopResponse, error)
 	GetByID(id uuid.UUID) (*dto.ShopResponse, error)
 	Update(ownerID uuid.UUID, shopID uuid.UUID, req *dto.UpdateShopRequest) (*dto.ShopResponse, error)
 }
 
 type shopUseCase struct {
+	txManager repository.TxManager
 	shopRepo repository.ShopRepository
 	userRepo repository.UserRepository
 }
 
-func NewShopUseCase(shopRepo repository.ShopRepository, userRepo repository.UserRepository) ShopUseCase {
+func NewShopUseCase(txManager repository.TxManager, shopRepo repository.ShopRepository, userRepo repository.UserRepository) ShopUseCase {
 	return &shopUseCase{
+		txManager: txManager,
 		shopRepo: shopRepo,
 		userRepo: userRepo,
 	}
 }
 
-func (u *shopUseCase) Create(ownerID uuid.UUID, req *dto.CreateShopRequest) (*dto.ShopResponse, error) {
+func (u *shopUseCase) Create(ctx context.Context, ownerID uuid.UUID, req *dto.CreateShopRequest) (*dto.ShopResponse, error) {
 	if _, err := u.shopRepo.FindByOwnerID(ownerID); err == nil {
 		return nil, fmt.Errorf("%w: %s", apperror.ErrConflict, "user already has a shop")
 	}
@@ -41,14 +45,23 @@ func (u *shopUseCase) Create(ownerID uuid.UUID, req *dto.CreateShopRequest) (*dt
 		OwnerID:        ownerID,
 	}
 
-	if err := u.shopRepo.Create(shop); err != nil {
-		return nil, errors.New("failed to create shop")
-	}
+	err := u.txManager.RunInTx(ctx, func(txCtx context.Context) error {
+		if err := u.shopRepo.Create(txCtx, shop); err != nil {
+			return errors.New("failed to create shop")
+		}
 
-	user, err := u.userRepo.FindByID(ownerID)
-	if err == nil && user.Role != entity.RoleAdmin {
-		user.Role = entity.RoleSeller
-		_ = u.userRepo.Update(user) // Ignore error, not strictly fatal if this fails, but ideally wrapped in a Tx
+		user, err := u.userRepo.FindByID(ownerID)
+		if err == nil && user.Role != entity.RoleAdmin {
+			user.Role = entity.RoleSeller
+			if err := u.userRepo.Update(txCtx, user); err != nil {
+				return errors.New("failed to update user role")
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return &dto.ShopResponse{

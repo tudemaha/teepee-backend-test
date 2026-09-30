@@ -1,5 +1,7 @@
 package usecase
 
+import "context"
+
 import (
 	"errors"
 	"fmt"
@@ -15,17 +17,19 @@ import (
 type PaymentUseCase interface {
 	CreatePayment(buyerID uuid.UUID, req *dto.CreatePaymentRequest) (*dto.PaymentResponse, error)
 	GetPaymentByOrderID(buyerID uuid.UUID, orderID uuid.UUID) (*dto.PaymentResponse, error)
-	UpdatePaymentStatus(userID uuid.UUID, role string, paymentID uuid.UUID, req *dto.UpdatePaymentStatusRequest) error
+	UpdatePaymentStatus(ctx context.Context, userID uuid.UUID, role string, paymentID uuid.UUID, req *dto.UpdatePaymentStatusRequest) error
 }
 
 type paymentUseCase struct {
+	txManager   repository.TxManager
 	paymentRepo repository.PaymentRepository
 	orderRepo   repository.OrderRepository
 	userRepo    repository.UserRepository
 }
 
-func NewPaymentUseCase(paymentRepo repository.PaymentRepository, orderRepo repository.OrderRepository, userRepo repository.UserRepository) PaymentUseCase {
+func NewPaymentUseCase(txManager repository.TxManager, paymentRepo repository.PaymentRepository, orderRepo repository.OrderRepository, userRepo repository.UserRepository) PaymentUseCase {
 	return &paymentUseCase{
+		txManager:   txManager,
 		paymentRepo: paymentRepo,
 		orderRepo:   orderRepo,
 		userRepo:    userRepo,
@@ -74,7 +78,7 @@ func (u *paymentUseCase) GetPaymentByOrderID(buyerID uuid.UUID, orderID uuid.UUI
 	return mapToPaymentResponse(payment), nil
 }
 
-func (u *paymentUseCase) UpdatePaymentStatus(userID uuid.UUID, role string, paymentID uuid.UUID, req *dto.UpdatePaymentStatusRequest) error {
+func (u *paymentUseCase) UpdatePaymentStatus(ctx context.Context, userID uuid.UUID, role string, paymentID uuid.UUID, req *dto.UpdatePaymentStatusRequest) error {
 	if role != string(entity.RoleAdmin) {
 		return fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized")
 	}
@@ -102,7 +106,15 @@ func (u *paymentUseCase) UpdatePaymentStatus(userID uuid.UUID, role string, paym
 		order.Status = entity.OrderStatusConfirmed
 	}
 
-	return u.paymentRepo.UpdatePaymentAndOrderStatus(payment, order)
+	return u.txManager.RunInTx(ctx, func(txCtx context.Context) error {
+		if err := u.paymentRepo.Update(txCtx, payment); err != nil {
+			return err
+		}
+		if err := u.orderRepo.Update(txCtx, order); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func mapToPaymentResponse(p *entity.Payment) *dto.PaymentResponse {

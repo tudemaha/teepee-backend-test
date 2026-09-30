@@ -1,5 +1,7 @@
 package usecase
 
+import "context"
+
 import (
 	"errors"
 	"fmt"
@@ -14,21 +16,23 @@ import (
 )
 
 type OrderUseCase interface {
-	Checkout(buyerID uuid.UUID, req *dto.CheckoutRequest) (*dto.OrderResponse, error)
+	Checkout(ctx context.Context, buyerID uuid.UUID, req *dto.CheckoutRequest) (*dto.OrderResponse, error)
 	GetMyOrders(buyerID uuid.UUID) ([]dto.OrderResponse, error)
 	GetByID(buyerID uuid.UUID, orderID uuid.UUID) (*dto.OrderResponse, error)
-	UpdateStatus(userID uuid.UUID, role string, orderID uuid.UUID, req *dto.UpdateOrderStatusRequest) error
+	UpdateStatus(ctx context.Context, userID uuid.UUID, role string, orderID uuid.UUID, req *dto.UpdateOrderStatusRequest) error
 }
 
 type orderUseCase struct {
+	txManager   repository.TxManager
 	orderRepo   repository.OrderRepository
 	cartRepo    repository.CartRepository
 	productRepo repository.ProductRepository
 	userRepo    repository.UserRepository
 }
 
-func NewOrderUseCase(orderRepo repository.OrderRepository, cartRepo repository.CartRepository, productRepo repository.ProductRepository, userRepo repository.UserRepository) OrderUseCase {
+func NewOrderUseCase(txManager repository.TxManager, orderRepo repository.OrderRepository, cartRepo repository.CartRepository, productRepo repository.ProductRepository, userRepo repository.UserRepository) OrderUseCase {
 	return &orderUseCase{
+		txManager:   txManager,
 		orderRepo:   orderRepo,
 		cartRepo:    cartRepo,
 		productRepo: productRepo,
@@ -36,7 +40,7 @@ func NewOrderUseCase(orderRepo repository.OrderRepository, cartRepo repository.C
 	}
 }
 
-func (u *orderUseCase) Checkout(buyerID uuid.UUID, req *dto.CheckoutRequest) (*dto.OrderResponse, error) {
+func (u *orderUseCase) Checkout(ctx context.Context, buyerID uuid.UUID, req *dto.CheckoutRequest) (*dto.OrderResponse, error) {
 	var totalAmount int64
 	var orderDetails []entity.OrderDetail
 	var cartIDs []uuid.UUID
@@ -116,9 +120,28 @@ func (u *orderUseCase) Checkout(buyerID uuid.UUID, req *dto.CheckoutRequest) (*d
 		Details:         orderDetails,
 	}
 
-	if err := u.orderRepo.Create(order, cartIDs); err != nil {
-		if err.Error() == "insufficient stock for one or more items during checkout" {
-			return nil, err
+	err := u.txManager.RunInTx(ctx, func(txCtx context.Context) error {
+		if err := u.orderRepo.Create(txCtx, order); err != nil {
+			return err
+		}
+
+		for _, detail := range order.Details {
+			if err := u.productRepo.ReduceStock(txCtx, detail.ProductID, detail.Quantity); err != nil {
+				return err
+			}
+		}
+
+		if len(cartIDs) > 0 {
+			if err := u.cartRepo.MarkCheckedOut(txCtx, cartIDs); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		if err.Error() == "insufficient stock" {
+			return nil, fmt.Errorf("%w: %s", apperror.ErrBadRequest, "insufficient stock for one or more items during checkout")
 		}
 		return nil, errors.New("failed to process checkout")
 	}
@@ -189,7 +212,7 @@ func mapToOrderSummaryResponse(o *entity.Order) *dto.OrderResponse {
 	}
 }
 
-func (u *orderUseCase) UpdateStatus(userID uuid.UUID, role string, orderID uuid.UUID, req *dto.UpdateOrderStatusRequest) error {
+func (u *orderUseCase) UpdateStatus(ctx context.Context, userID uuid.UUID, role string, orderID uuid.UUID, req *dto.UpdateOrderStatusRequest) error {
 	order, err := u.orderRepo.FindByID(orderID)
 	if err != nil {
 		return fmt.Errorf("%w: %s", apperror.ErrNotFound, "order not found")
@@ -221,9 +244,20 @@ func (u *orderUseCase) UpdateStatus(userID uuid.UUID, role string, orderID uuid.
 	}
 
 	if newStatus == entity.OrderStatusCancelled && order.Status != entity.OrderStatusCancelled {
-		return u.orderRepo.CancelOrderAndRollbackStock(order)
+		return u.txManager.RunInTx(ctx, func(txCtx context.Context) error {
+			order.Status = newStatus
+			if err := u.orderRepo.Update(txCtx, order); err != nil {
+				return err
+			}
+			for _, detail := range order.Details {
+				if err := u.productRepo.IncreaseStock(txCtx, detail.ProductID, detail.Quantity); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 	}
 
 	order.Status = newStatus
-	return u.orderRepo.Update(order)
+	return u.orderRepo.Update(ctx, order)
 }

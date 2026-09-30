@@ -3,13 +3,18 @@ package usecase
 import (
 	"errors"
 	"fmt"
+
 	"github.com/tudemaha/marketplace-be/pkg/apperror"
+
+	"context"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
 	"github.com/tudemaha/marketplace-be/internal/domain/entity"
 	"github.com/tudemaha/marketplace-be/internal/domain/repository"
 	"github.com/tudemaha/marketplace-be/pkg/utils"
+	"golang.org/x/sync/errgroup"
 )
 
 type ProductUseCase interface {
@@ -35,18 +40,37 @@ func NewProductUseCase(productRepo repository.ProductRepository, shopRepo reposi
 }
 
 func (u *productUseCase) Create(sellerID uuid.UUID, req *dto.CreateProductRequest) (*dto.ProductResponse, error) {
-	shop, err := u.shopRepo.FindByOwnerID(sellerID)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "shop not found for this seller")
+	var shop *entity.Shop
+	var categories []entity.Category
+	var mu sync.Mutex
+
+	g, _ := errgroup.WithContext(context.Background())
+
+	g.Go(func() error {
+		var err error
+		shop, err = u.shopRepo.FindByOwnerID(sellerID)
+		if err != nil {
+			return fmt.Errorf("%w: %s", apperror.ErrNotFound, "shop not found for this seller")
+		}
+		return nil
+	})
+
+	for _, catID := range req.CategoryIDs {
+		g.Go(func() error {
+			cat, err := u.categoryRepo.FindByID(catID)
+			if err != nil {
+				return fmt.Errorf("%w: %s", apperror.ErrBadRequest, "one or more categories not found")
+			}
+
+			mu.Lock()
+			categories = append(categories, *cat)
+			mu.Unlock()
+			return nil
+		})
 	}
 
-	var categories []entity.Category
-	for _, catID := range req.CategoryIDs {
-		cat, err := u.categoryRepo.FindByID(catID)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %s", apperror.ErrBadRequest, "one or more categories not found")
-		}
-		categories = append(categories, *cat)
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
 	var images []entity.ProductImage

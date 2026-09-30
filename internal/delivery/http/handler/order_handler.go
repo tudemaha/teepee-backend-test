@@ -45,7 +45,7 @@ func (h *OrderHandler) Checkout(c *echo.Context) error {
 		return response.Error(c, http.StatusBadRequest, "validation failed", validator.FormatErrors(err))
 	}
 
-	res, err := h.orderUC.Checkout(userID, &req)
+	res, err := h.orderUC.Checkout(c.Request().Context(), userID, &req)
 	if err != nil {
 		if errors.Is(err, apperror.ErrBadRequest) {
 			return response.Error(c, http.StatusBadRequest, err.Error(), nil)
@@ -114,7 +114,7 @@ func (h *OrderHandler) UpdateStatus(c *echo.Context) error {
 		return response.Error(c, http.StatusBadRequest, "validation failed", validator.FormatErrors(err))
 	}
 
-	if err := h.orderUC.UpdateStatus(userID, role, orderID, &req); err != nil {
+	if err := h.orderUC.UpdateStatus(c.Request().Context(), userID, role, orderID, &req); err != nil {
 		if errors.Is(err, apperror.ErrNotFound) {
 			return response.Error(c, http.StatusNotFound, err.Error(), nil)
 		}

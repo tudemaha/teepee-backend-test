@@ -1,5 +1,7 @@
 package postgres
 
+import "context"
+
 import (
 	"github.com/google/uuid"
 	"github.com/tudemaha/marketplace-be/internal/domain/entity"
@@ -47,4 +49,11 @@ func (r *cartRepository) Update(cart *entity.Cart) error {
 
 func (r *cartRepository) Delete(id uuid.UUID) error {
 	return r.db.Delete(&entity.Cart{}, "id = ?", id).Error
+}
+
+func (r *cartRepository) MarkCheckedOut(ctx context.Context, cartIDs []uuid.UUID) error {
+	if len(cartIDs) == 0 {
+		return nil
+	}
+	return ExtractDB(ctx, r.db).Model(&entity.Cart{}).Where("id IN ?", cartIDs).Update("is_checked_out", true).Error
 }
