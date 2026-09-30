@@ -37,3 +37,28 @@ func MapToProductResponse(p *entity.Product) *dto.ProductResponse {
 		Images:      imgRes,
 	}
 }
+
+func MapToProductListResponse(p *entity.Product) *dto.ProductListResponse {
+	var primaryImage string
+	for _, img := range p.Images {
+		if img.IsPrimary {
+			primaryImage = img.URL
+			break
+		}
+	}
+	
+	// Fallback to first image if no primary is explicitly set
+	if primaryImage == "" && len(p.Images) > 0 {
+		primaryImage = p.Images[0].URL
+	}
+
+	return &dto.ProductListResponse{
+		ID:       p.ID,
+		Name:     p.Name,
+		Price:    p.Price,
+		Stock:    p.Stock,
+		Status:   string(p.Status),
+		ShopName: p.Shop.Name,
+		Image:    primaryImage,
+	}
+}

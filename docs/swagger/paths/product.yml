@@ -44,7 +44,7 @@ products:
                     data:
                       type: array
                       items:
-                        $ref: "../components/product.yml#/schemas/ProductResponse"
+                        $ref: "../components/product.yml#/schemas/ProductListResponse"
 
   post:
     operationId: createProduct
@@ -195,8 +195,8 @@ productsIdStock:
   patch:
     operationId: updateProductStock
     tags: [Product]
-    summary: Increment product stock (owner only)
-    description: Adds the given `stock` value to the existing stock — additive, not a replacement.
+    summary: Update product stock (owner only)
+    description: Replaces the existing stock with the given `stock` value.
     security:
       - BearerAuth: []
     parameters:

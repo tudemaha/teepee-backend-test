@@ -68,7 +68,7 @@ schemas:
       stock:
         type: integer
         minimum: 0
-        description: Amount to add to existing stock
+        description: New stock value to replace the existing stock
         example: 20
 
   UpdateProductAvailabilityRequest:
@@ -133,3 +133,32 @@ schemas:
         type: array
         items:
           $ref: "#/schemas/ProductImageResponse"
+
+  ProductListResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120005"
+      name:
+        type: string
+        example: "iPhone 15 Pro"
+      price:
+        type: integer
+        format: int64
+        example: 19999000
+      stock:
+        type: integer
+        example: 50
+      status:
+        type: string
+        enum: [available, out_of_stock, not_available]
+        example: available
+      shop_name:
+        type: string
+        example: "Toko Elektronik Jaya"
+      image:
+        type: string
+        format: uri
+        example: "https://cdn.example.com/iphone15.jpg"

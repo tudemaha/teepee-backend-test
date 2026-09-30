@@ -38,6 +38,16 @@ type ProductResponse struct {
 	Images      []ProductImageResponse `json:"images"`
 }
 
+type ProductListResponse struct {
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	Price    int64     `json:"price"`
+	Stock    int       `json:"stock"`
+	Status   string    `json:"status"`
+	ShopName string    `json:"shop_name,omitempty"`
+	Image    string    `json:"image,omitempty"`
+}
+
 type ProductListFilter struct {
 	ShopID     uuid.UUID `query:"shop_id"`
 	CategoryID uuid.UUID `query:"category_id"`

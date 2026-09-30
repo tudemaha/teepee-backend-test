@@ -20,7 +20,7 @@ import (
 type ProductUseCase interface {
 	Create(sellerID uuid.UUID, req *dto.CreateProductRequest) (*dto.ProductResponse, error)
 	GetByID(id uuid.UUID) (*dto.ProductResponse, error)
-	GetAll(filter dto.ProductListFilter) ([]dto.ProductResponse, error)
+	GetAll(filter dto.ProductListFilter) ([]dto.ProductListResponse, error)
 	Update(sellerID uuid.UUID, productID uuid.UUID, req *dto.UpdateProductRequest) (*dto.ProductResponse, error)
 	UpdateStock(sellerID uuid.UUID, productID uuid.UUID, req *dto.UpdateProductStockRequest) (*dto.ProductResponse, error)
 	UpdateAvailability(sellerID uuid.UUID, productID uuid.UUID, req *dto.UpdateProductAvailabilityRequest) (*dto.ProductResponse, error)
@@ -111,19 +111,19 @@ func (u *productUseCase) GetByID(id uuid.UUID) (*dto.ProductResponse, error) {
 	return utils.MapToProductResponse(product), nil
 }
 
-func (u *productUseCase) GetAll(filter dto.ProductListFilter) ([]dto.ProductResponse, error) {
+func (u *productUseCase) GetAll(filter dto.ProductListFilter) ([]dto.ProductListResponse, error) {
 	products, err := u.productRepo.FindAll(filter)
 	if err != nil {
 		return nil, errors.New("failed to fetch products")
 	}
 
-	var res []dto.ProductResponse
+	var res []dto.ProductListResponse
 	for _, p := range products {
-		res = append(res, *utils.MapToProductResponse(&p))
+		res = append(res, *utils.MapToProductListResponse(&p))
 	}
 
 	if res == nil {
-		res = []dto.ProductResponse{}
+		res = []dto.ProductListResponse{}
 	}
 	return res, nil
 }
