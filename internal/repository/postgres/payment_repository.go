@@ -1,5 +1,7 @@
 package postgres
 
+import "context"
+
 import (
 	"github.com/google/uuid"
 	"github.com/tudemaha/marketplace-be/internal/domain/entity"
@@ -31,18 +33,8 @@ func (r *paymentRepository) FindByID(id uuid.UUID) (*entity.Payment, error) {
 	return &p, err
 }
 
-func (r *paymentRepository) Update(payment *entity.Payment) error {
-	return r.db.Save(payment).Error
+func (r *paymentRepository) Update(ctx context.Context, payment *entity.Payment) error {
+	return ExtractDB(ctx, r.db).Save(payment).Error
 }
 
-func (r *paymentRepository) UpdatePaymentAndOrderStatus(payment *entity.Payment, order *entity.Order) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(payment).Error; err != nil {
-			return err
-		}
-		if err := tx.Save(order).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-}
+

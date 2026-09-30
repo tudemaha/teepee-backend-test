@@ -27,6 +27,7 @@ func main() {
 	}
 
 	// 3. Initialize Repositories
+	txManager := postgres.NewTxManager(db)
 	userRepo := postgres.NewUserRepository(db)
 	rtRepo := postgres.NewRefreshTokenRepository(db)
 	categoryRepo := postgres.NewCategoryRepository(db)
@@ -43,8 +44,8 @@ func main() {
 	shopUseCase := usecase.NewShopUseCase(shopRepo, userRepo)
 	productUseCase := usecase.NewProductUseCase(productRepo, shopRepo, categoryRepo)
 	cartUseCase := usecase.NewCartUseCase(cartRepo, productRepo)
-	orderUseCase := usecase.NewOrderUseCase(orderRepo, cartRepo, productRepo, userRepo)
-	paymentUseCase := usecase.NewPaymentUseCase(paymentRepo, orderRepo, userRepo)
+	orderUseCase := usecase.NewOrderUseCase(txManager, orderRepo, cartRepo, productRepo, userRepo)
+	paymentUseCase := usecase.NewPaymentUseCase(txManager, paymentRepo, orderRepo, userRepo)
 	reviewUseCase := usecase.NewReviewUseCase(reviewRepo, orderRepo, productRepo)
 
 	// 5. Initialize Echo Framework

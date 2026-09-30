@@ -1,6 +1,9 @@
 package postgres
 
+import "context"
+
 import (
+	"errors"
 	"github.com/google/uuid"
 	"github.com/tudemaha/marketplace-be/internal/delivery/http/dto"
 	"github.com/tudemaha/marketplace-be/internal/domain/entity"
@@ -84,4 +87,15 @@ func (r *productRepository) Update(product *entity.Product, newCategoryIDs []uui
 
 func (r *productRepository) SoftDelete(id uuid.UUID) error {
 	return r.db.Model(&entity.Product{}).Where("id = ?", id).Update("available", false).Error
+}
+
+func (r *productRepository) ReduceStock(ctx context.Context, productID uuid.UUID, quantity int) error {
+	result := ExtractDB(ctx, r.db).Model(&entity.Product{}).Where("id = ? AND stock >= ?", productID, quantity).UpdateColumn("stock", gorm.Expr("stock - ?", quantity))
+	if result.Error != nil { return result.Error }
+	if result.RowsAffected == 0 { return errors.New("insufficient stock") }
+	return nil
+}
+
+func (r *productRepository) IncreaseStock(ctx context.Context, productID uuid.UUID, quantity int) error {
+	return ExtractDB(ctx, r.db).Model(&entity.Product{}).Where("id = ?", productID).UpdateColumn("stock", gorm.Expr("stock + ?", quantity)).Error
 }

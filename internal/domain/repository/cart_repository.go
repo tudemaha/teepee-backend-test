@@ -1,5 +1,7 @@
 package repository
 
+import "context"
+
 import (
 	"github.com/google/uuid"
 	"github.com/tudemaha/marketplace-be/internal/domain/entity"
@@ -12,4 +14,5 @@ type CartRepository interface {
 	Create(cart *entity.Cart) error
 	Update(cart *entity.Cart) error
 	Delete(id uuid.UUID) error
+	MarkCheckedOut(ctx context.Context, cartIDs []uuid.UUID) error
 }
