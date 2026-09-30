@@ -26,7 +26,12 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// 3. Initialize Repositories
+	// 3. Run Database Seeders
+	if err := database.SeedData(db, cfg.App); err != nil {
+		log.Fatalf("Failed to seed database: %v", err)
+	}
+
+	// 4. Initialize Repositories
 	txManager := postgres.NewTxManager(db)
 	userRepo := postgres.NewUserRepository(db)
 	rtRepo := postgres.NewRefreshTokenRepository(db)

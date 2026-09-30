@@ -68,7 +68,7 @@ schemas:
       stock:
         type: integer
         minimum: 0
-        description: New stock value to replace the existing stock
+        description: Amount to add to existing stock
         example: 20
 
   UpdateProductAvailabilityRequest:

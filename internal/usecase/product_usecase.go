@@ -223,7 +223,7 @@ func (u *productUseCase) UpdateStock(sellerID uuid.UUID, productID uuid.UUID, re
 		return nil, fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to update this product")
 	}
 
-	product.Stock = req.Stock
+	product.Stock += req.Stock
 	if err := u.productRepo.Update(product, nil); err != nil {
 		return nil, errors.New("failed to update product stock")
 	}

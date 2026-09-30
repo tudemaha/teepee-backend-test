@@ -195,8 +195,8 @@ productsIdStock:
   patch:
     operationId: updateProductStock
     tags: [Product]
-    summary: Update product stock (owner only)
-    description: Replaces the existing stock with the given `stock` value.
+    summary: Add product stock (owner only)
+    description: Adds the given `stock` value to the existing stock (additive).
     security:
       - BearerAuth: []
     parameters:
