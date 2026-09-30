@@ -31,6 +31,8 @@ func NewProductHandler(g *echo.Group, productUC usecase.ProductUseCase, jwtSecre
 
 	prodGroup.POST("", h.Create, middleware.Auth(jwtSecret), middleware.RequireRole("seller", "admin"))
 	prodGroup.PUT("/:id", h.Update, middleware.Auth(jwtSecret), middleware.RequireRole("seller", "admin"))
+	prodGroup.PATCH("/:id/stock", h.UpdateStock, middleware.Auth(jwtSecret), middleware.RequireRole("seller", "admin"))
+	prodGroup.PATCH("/:id/availability", h.UpdateAvailability, middleware.Auth(jwtSecret), middleware.RequireRole("seller", "admin"))
 	prodGroup.DELETE("/:id", h.Delete, middleware.Auth(jwtSecret), middleware.RequireRole("seller", "admin"))
 }
 

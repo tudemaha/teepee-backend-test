@@ -129,13 +129,34 @@ func (u *productUseCase) GetAll(filter dto.ProductListFilter) ([]dto.ProductResp
 }
 
 func (u *productUseCase) Update(sellerID uuid.UUID, productID uuid.UUID, req *dto.UpdateProductRequest) (*dto.ProductResponse, error) {
-	product, err := u.productRepo.FindByID(productID)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
+	var product *entity.Product
+	var shop *entity.Shop
+
+	g, _ := errgroup.WithContext(context.Background())
+
+	g.Go(func() error {
+		var err error
+		product, err = u.productRepo.FindByID(productID)
+		if err != nil {
+			return fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		var err error
+		shop, err = u.shopRepo.FindByOwnerID(sellerID)
+		if err != nil {
+			return fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to update this product")
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
-	shop, err := u.shopRepo.FindByOwnerID(sellerID)
-	if err != nil || shop.ID != product.ShopID {
+	if shop.ID != product.ShopID {
 		return nil, fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to update this product")
 	}
 
@@ -171,13 +192,34 @@ func (u *productUseCase) Delete(sellerID uuid.UUID, productID uuid.UUID) error {
 }
 
 func (u *productUseCase) UpdateStock(sellerID uuid.UUID, productID uuid.UUID, req *dto.UpdateProductStockRequest) (*dto.ProductResponse, error) {
-	product, err := u.productRepo.FindByID(productID)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
+	var product *entity.Product
+	var shop *entity.Shop
+
+	g, _ := errgroup.WithContext(context.Background())
+
+	g.Go(func() error {
+		var err error
+		product, err = u.productRepo.FindByID(productID)
+		if err != nil {
+			return fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		var err error
+		shop, err = u.shopRepo.FindByOwnerID(sellerID)
+		if err != nil {
+			return fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to update this product")
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
-	shop, err := u.shopRepo.FindByOwnerID(sellerID)
-	if err != nil || shop.ID != product.ShopID {
+	if shop.ID != product.ShopID {
 		return nil, fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to update this product")
 	}
 
@@ -191,13 +233,34 @@ func (u *productUseCase) UpdateStock(sellerID uuid.UUID, productID uuid.UUID, re
 }
 
 func (u *productUseCase) UpdateAvailability(sellerID uuid.UUID, productID uuid.UUID, req *dto.UpdateProductAvailabilityRequest) (*dto.ProductResponse, error) {
-	product, err := u.productRepo.FindByID(productID)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
+	var product *entity.Product
+	var shop *entity.Shop
+
+	g, _ := errgroup.WithContext(context.Background())
+
+	g.Go(func() error {
+		var err error
+		product, err = u.productRepo.FindByID(productID)
+		if err != nil {
+			return fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		var err error
+		shop, err = u.shopRepo.FindByOwnerID(sellerID)
+		if err != nil {
+			return fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to update this product")
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
-	shop, err := u.shopRepo.FindByOwnerID(sellerID)
-	if err != nil || shop.ID != product.ShopID {
+	if shop.ID != product.ShopID {
 		return nil, fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to update this product")
 	}
 
