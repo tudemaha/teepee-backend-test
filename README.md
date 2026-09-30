@@ -15,7 +15,6 @@ This project simulates a real-world e-commerce backend where:
 The project focuses on correctness, consistency, and concurrency — ensuring data integrity even under parallel requests.
 
 **Note on Images:** Currently, product images and shop profile pictures are stored as URL strings. Direct file uploads (e.g., via multipart/form-data or to an object storage like AWS S3) are not implemented yet.
----
 
 ## 🛠️ Technology Stack
 
@@ -203,6 +202,7 @@ The project includes a multi-stage Docker build and a `docker-compose.yml` file 
 ```bash
 docker compose up --build
 ```
+
 The server will start on `http://localhost:8080`.
 
 **Standard (Local Development):**
@@ -236,12 +236,11 @@ When the application starts, it automatically seeds the database with essential 
 
 **Default Users (one for each role):**
 
-| Role       | Email                            | Password   | Notes |
-| ---------- | -------------------------------- | ---------- | ----- |
-| **Admin**  | `admin@example.com` (from `.env`)| `admin123` (from `.env`) | Can manage categories |
-| **Seller** | `seller@example.com` (from `.env`)| `seller123` (from `.env`) | Automatically gets a default Shop created |
-| **Buyer**  | `buyer@example.com` (from `.env`)| `buyer123` (from `.env`) | Can add to cart and checkout |
-
+| Role       | Email                              | Password                  | Notes                                     |
+| ---------- | ---------------------------------- | ------------------------- | ----------------------------------------- |
+| **Admin**  | `admin@example.com` (from `.env`)  | `admin123` (from `.env`)  | Can manage categories                     |
+| **Seller** | `seller@example.com` (from `.env`) | `seller123` (from `.env`) | Automatically gets a default Shop created |
+| **Buyer**  | `buyer@example.com` (from `.env`)  | `buyer123` (from `.env`)  | Can add to cart and checkout              |
 
 ---
 
