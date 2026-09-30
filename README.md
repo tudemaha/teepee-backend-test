@@ -14,6 +14,7 @@ This project simulates a real-world e-commerce backend where:
 
 The project focuses on correctness, consistency, and concurrency — ensuring data integrity even under parallel requests.
 
+**Note on Images:** Currently, product images and shop profile pictures are stored as URL strings. Direct file uploads (e.g., via multipart/form-data or to an object storage like AWS S3) are not implemented yet.
 ---
 
 ## 🛠️ Technology Stack
@@ -195,7 +196,17 @@ go mod tidy
 
 ### 4. Run the application
 
-**Standard:**
+**Using Docker (Recommended & Easiest):**
+
+The project includes a multi-stage Docker build and a `docker-compose.yml` file that automatically spins up the PostgreSQL database and the Go API.
+
+```bash
+docker compose up --build
+```
+The server will start on `http://localhost:8080`.
+
+**Standard (Local Development):**
+If you have a local PostgreSQL instance running (configured in `.env`), you can run the API directly:
 
 ```bash
 go run cmd/main.go
