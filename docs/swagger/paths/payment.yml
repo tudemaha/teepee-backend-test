@@ -1,0 +1,117 @@
+payments:
+  post:
+    operationId: createPayment
+    tags: [Payment]
+    summary: Create a payment for an order
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/payment.yml#/schemas/CreatePaymentRequest"
+    responses:
+      "201":
+        description: Payment created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/payment.yml#/schemas/PaymentResponse"
+      "400":
+        description: Order already has a payment or invalid request
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+paymentsOrderId:
+  get:
+    operationId: getPaymentByOrderId
+    tags: [Payment]
+    summary: Get payment by order ID
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Payment fetched successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/payment.yml#/schemas/PaymentResponse"
+      "404":
+        description: Payment not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+paymentsIdStatus:
+  patch:
+    operationId: updatePaymentStatus
+    tags: [Payment]
+    summary: Update payment status (admin only)
+    description: |
+      When set to `paid`, the linked order status is automatically updated to `confirmed`.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/payment.yml#/schemas/UpdatePaymentStatusRequest"
+    responses:
+      "200":
+        description: Payment status updated
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/payment.yml#/schemas/PaymentResponse"
+      "403":
+        description: Forbidden — admin role required
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "404":
+        description: Payment not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"

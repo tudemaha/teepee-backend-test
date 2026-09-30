@@ -1,0 +1,64 @@
+schemas:
+  CreateReviewRequest:
+    type: object
+    required: [product_id, rating]
+    properties:
+      product_id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120005"
+      rating:
+        type: integer
+        minimum: 1
+        maximum: 5
+        example: 5
+      comment:
+        type: string
+        maxLength: 1000
+        example: "Produk sangat bagus dan pengiriman cepat!"
+
+  ReviewResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120050"
+      product_id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120005"
+      user_id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120001"
+      user_name:
+        type: string
+        example: "John Doe"
+      rating:
+        type: integer
+        minimum: 1
+        maximum: 5
+        example: 5
+      comment:
+        type: string
+        example: "Produk sangat bagus dan pengiriman cepat!"
+      created_at:
+        type: string
+        format: date-time
+        example: "2026-09-30T12:00:00Z"
+
+  ProductReviewsResponse:
+    type: object
+    properties:
+      average_rating:
+        type: number
+        format: float
+        example: 4.7
+      total_reviews:
+        type: integer
+        example: 24
+      reviews:
+        type: array
+        items:
+          $ref: "#/schemas/ReviewResponse"

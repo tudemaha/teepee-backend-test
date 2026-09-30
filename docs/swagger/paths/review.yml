@@ -1,0 +1,78 @@
+reviews:
+  post:
+    operationId: createReview
+    tags: [Review]
+    summary: Submit a product review
+    description: Only buyers with a `completed` order containing the product can submit a review. One review per buyer per product.
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/review.yml#/schemas/CreateReviewRequest"
+    responses:
+      "201":
+        description: Review submitted successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/review.yml#/schemas/ReviewResponse"
+      "400":
+        description: Validation error or duplicate review
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "403":
+        description: Forbidden — no completed order for this product
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+reviewsId:
+  delete:
+    operationId: deleteReview
+    tags: [Review]
+    summary: Delete own review
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Review deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+      "403":
+        description: Forbidden — not your review
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "404":
+        description: Review not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"

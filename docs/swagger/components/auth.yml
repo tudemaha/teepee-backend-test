@@ -1,0 +1,79 @@
+schemas:
+  RegisterRequest:
+    type: object
+    required: [name, email, password, password_confirmation]
+    properties:
+      name:
+        type: string
+        minLength: 2
+        example: John Doe
+      email:
+        type: string
+        format: email
+        example: john@example.com
+      password:
+        type: string
+        minLength: 6
+        format: password
+        example: "secret123"
+      password_confirmation:
+        type: string
+        format: password
+        example: "secret123"
+      phone:
+        type: string
+        minLength: 8
+        example: "08123456789"
+
+  LoginRequest:
+    type: object
+    required: [email, password]
+    properties:
+      email:
+        type: string
+        format: email
+        example: john@example.com
+      password:
+        type: string
+        format: password
+        example: "secret123"
+
+  RefreshRequest:
+    type: object
+    required: [refresh_token]
+    properties:
+      refresh_token:
+        type: string
+        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+  TokenResponse:
+    type: object
+    properties:
+      access_token:
+        type: string
+        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      refresh_token:
+        type: string
+        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+  UserProfileResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120002"
+      name:
+        type: string
+        example: John Doe
+      email:
+        type: string
+        format: email
+        example: john@example.com
+      phone:
+        type: string
+        example: "08123456789"
+      role:
+        type: string
+        enum: [buyer, seller, admin]
+        example: buyer

@@ -1,0 +1,55 @@
+schemas:
+  AddToCartRequest:
+    type: object
+    required: [product_id, quantity]
+    properties:
+      product_id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120005"
+      quantity:
+        type: integer
+        minimum: 1
+        example: 2
+
+  UpdateCartRequest:
+    type: object
+    required: [quantity]
+    properties:
+      quantity:
+        type: integer
+        minimum: 1
+        example: 3
+
+  CartItemResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120020"
+      product_id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120005"
+      product:
+        $ref: "../components/product.yml#/schemas/ProductResponse"
+      quantity:
+        type: integer
+        example: 2
+      subtotal:
+        type: integer
+        format: int64
+        example: 39998000
+
+  CartResponse:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/schemas/CartItemResponse"
+      total_price:
+        type: integer
+        format: int64
+        example: 39998000

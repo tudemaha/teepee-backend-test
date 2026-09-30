@@ -1,0 +1,220 @@
+openapi: 3.0.3
+info:
+  title: Teepee Marketplace API
+  description: |
+    Production-grade RESTful marketplace backend built with Go (Echo + GORM + PostgreSQL).
+
+    ## Authentication
+    Most endpoints require a Bearer JWT access token in the `Authorization` header.
+    Obtain a token pair via `POST /auth/register` or `POST /auth/login`.
+
+    ## Roles
+    - **buyer** — default role after registration
+    - **seller** — granted automatically after creating a shop
+    - **admin** — manually assigned; manages categories and payments
+  version: 1.0.0
+  contact:
+    name: tudemaha
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+
+security: []
+
+tags:
+  - name: Auth
+    description: Registration, login, token refresh, logout, and profile
+  - name: Shop
+    description: Shop creation and management
+  - name: Category
+    description: Product category management (admin-only writes)
+  - name: Product
+    description: Product catalog, stock, and availability management
+  - name: Cart
+    description: Shopping cart operations
+  - name: Order
+    description: Checkout and order lifecycle
+  - name: Payment
+    description: Payment creation and status management
+  - name: Review
+    description: Product reviews (buyers with completed orders only)
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ── Shared ────────────────────────────────────────────────────────────────
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: string
+          nullable: true
+
+    # ── Auth ─────────────────────────────────────────────────────────────────
+    RegisterRequest:
+      $ref: "./components/auth.yml#/schemas/RegisterRequest"
+    LoginRequest:
+      $ref: "./components/auth.yml#/schemas/LoginRequest"
+    RefreshRequest:
+      $ref: "./components/auth.yml#/schemas/RefreshRequest"
+    TokenResponse:
+      $ref: "./components/auth.yml#/schemas/TokenResponse"
+    UserProfileResponse:
+      $ref: "./components/auth.yml#/schemas/UserProfileResponse"
+
+    # ── Shop ─────────────────────────────────────────────────────────────────
+    CreateShopRequest:
+      $ref: "./components/shop.yml#/schemas/CreateShopRequest"
+    UpdateShopRequest:
+      $ref: "./components/shop.yml#/schemas/UpdateShopRequest"
+    ShopResponse:
+      $ref: "./components/shop.yml#/schemas/ShopResponse"
+
+    # ── Category ──────────────────────────────────────────────────────────────
+    CreateCategoryRequest:
+      $ref: "./components/category.yml#/schemas/CreateCategoryRequest"
+    CategoryResponse:
+      $ref: "./components/category.yml#/schemas/CategoryResponse"
+
+    # ── Product ───────────────────────────────────────────────────────────────
+    CreateProductRequest:
+      $ref: "./components/product.yml#/schemas/CreateProductRequest"
+    UpdateProductRequest:
+      $ref: "./components/product.yml#/schemas/UpdateProductRequest"
+    UpdateProductStockRequest:
+      $ref: "./components/product.yml#/schemas/UpdateProductStockRequest"
+    UpdateProductAvailabilityRequest:
+      $ref: "./components/product.yml#/schemas/UpdateProductAvailabilityRequest"
+    ProductResponse:
+      $ref: "./components/product.yml#/schemas/ProductResponse"
+    ProductImageResponse:
+      $ref: "./components/product.yml#/schemas/ProductImageResponse"
+
+    # ── Cart ──────────────────────────────────────────────────────────────────
+    AddToCartRequest:
+      $ref: "./components/cart.yml#/schemas/AddToCartRequest"
+    UpdateCartRequest:
+      $ref: "./components/cart.yml#/schemas/UpdateCartRequest"
+    CartItemResponse:
+      $ref: "./components/cart.yml#/schemas/CartItemResponse"
+    CartResponse:
+      $ref: "./components/cart.yml#/schemas/CartResponse"
+
+    # ── Order ─────────────────────────────────────────────────────────────────
+    CheckoutRequest:
+      $ref: "./components/order.yml#/schemas/CheckoutRequest"
+    UpdateOrderStatusRequest:
+      $ref: "./components/order.yml#/schemas/UpdateOrderStatusRequest"
+    OrderDetailResponse:
+      $ref: "./components/order.yml#/schemas/OrderDetailResponse"
+    OrderResponse:
+      $ref: "./components/order.yml#/schemas/OrderResponse"
+
+    # ── Payment ───────────────────────────────────────────────────────────────
+    CreatePaymentRequest:
+      $ref: "./components/payment.yml#/schemas/CreatePaymentRequest"
+    UpdatePaymentStatusRequest:
+      $ref: "./components/payment.yml#/schemas/UpdatePaymentStatusRequest"
+    PaymentResponse:
+      $ref: "./components/payment.yml#/schemas/PaymentResponse"
+
+    # ── Review ────────────────────────────────────────────────────────────────
+    CreateReviewRequest:
+      $ref: "./components/review.yml#/schemas/CreateReviewRequest"
+    ReviewResponse:
+      $ref: "./components/review.yml#/schemas/ReviewResponse"
+    ProductReviewsResponse:
+      $ref: "./components/review.yml#/schemas/ProductReviewsResponse"
+
+paths:
+  # ── Auth ─────────────────────────────────────────────────────────────────
+  /auth/register:
+    $ref: "./paths/auth.yml#/register"
+  /auth/login:
+    $ref: "./paths/auth.yml#/login"
+  /auth/refresh:
+    $ref: "./paths/auth.yml#/refresh"
+  /auth/logout:
+    $ref: "./paths/auth.yml#/logout"
+  /auth/me:
+    $ref: "./paths/auth.yml#/me"
+
+  # ── Shop ─────────────────────────────────────────────────────────────────
+  /shops:
+    $ref: "./paths/shop.yml#/shops"
+  /shops/{id}:
+    $ref: "./paths/shop.yml#/shopsId"
+
+  # ── Category ─────────────────────────────────────────────────────────────
+  /categories:
+    $ref: "./paths/category.yml#/categories"
+  /categories/{id}:
+    $ref: "./paths/category.yml#/categoriesId"
+
+  # ── Product ──────────────────────────────────────────────────────────────
+  /products:
+    $ref: "./paths/product.yml#/products"
+  /products/{id}:
+    $ref: "./paths/product.yml#/productsId"
+  /products/{id}/stock:
+    $ref: "./paths/product.yml#/productsIdStock"
+  /products/{id}/availability:
+    $ref: "./paths/product.yml#/productsIdAvailability"
+  /products/{id}/reviews:
+    $ref: "./paths/product.yml#/productsIdReviews"
+
+  # ── Cart ─────────────────────────────────────────────────────────────────
+  /carts:
+    $ref: "./paths/cart.yml#/carts"
+  /carts/{id}:
+    $ref: "./paths/cart.yml#/cartsId"
+
+  # ── Order ────────────────────────────────────────────────────────────────
+  /orders/checkout:
+    $ref: "./paths/order.yml#/checkout"
+  /orders:
+    $ref: "./paths/order.yml#/orders"
+  /orders/{id}:
+    $ref: "./paths/order.yml#/ordersId"
+  /orders/{id}/status:
+    $ref: "./paths/order.yml#/ordersIdStatus"
+
+  # ── Payment ──────────────────────────────────────────────────────────────
+  /payments:
+    $ref: "./paths/payment.yml#/payments"
+  /payments/{orderId}:
+    $ref: "./paths/payment.yml#/paymentsOrderId"
+  /payments/{id}/status:
+    $ref: "./paths/payment.yml#/paymentsIdStatus"
+
+  # ── Review ───────────────────────────────────────────────────────────────
+  /reviews:
+    $ref: "./paths/review.yml#/reviews"
+  /reviews/{id}:
+    $ref: "./paths/review.yml#/reviewsId"

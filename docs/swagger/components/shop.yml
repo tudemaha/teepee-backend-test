@@ -1,0 +1,53 @@
+schemas:
+  CreateShopRequest:
+    type: object
+    required: [name, address]
+    properties:
+      name:
+        type: string
+        minLength: 2
+        example: "Toko Elektronik Jaya"
+      address:
+        type: string
+        example: "Jl. Sudirman No. 1, Jakarta"
+      profile_picture:
+        type: string
+        format: uri
+        example: "https://cdn.example.com/shop-logo.png"
+
+  UpdateShopRequest:
+    type: object
+    required: [name, address]
+    properties:
+      name:
+        type: string
+        minLength: 2
+        example: "Toko Elektronik Jaya Updated"
+      address:
+        type: string
+        example: "Jl. Thamrin No. 5, Jakarta"
+      profile_picture:
+        type: string
+        format: uri
+        example: "https://cdn.example.com/new-logo.png"
+
+  ShopResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120002"
+      name:
+        type: string
+        example: "Toko Elektronik Jaya"
+      address:
+        type: string
+        example: "Jl. Sudirman No. 1, Jakarta"
+      profile_picture:
+        type: string
+        example: "https://cdn.example.com/shop-logo.png"
+      owner_id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120003"

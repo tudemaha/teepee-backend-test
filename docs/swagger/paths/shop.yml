@@ -1,0 +1,118 @@
+shops:
+  post:
+    operationId: createShop
+    tags: [Shop]
+    summary: Create a new shop (upgrades user role to seller)
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/shop.yml#/schemas/CreateShopRequest"
+    responses:
+      "201":
+        description: Shop created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/shop.yml#/schemas/ShopResponse"
+      "400":
+        description: Validation error or shop already exists
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+shopsId:
+  get:
+    operationId: getShopById
+    tags: [Shop]
+    summary: Get shop by ID
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Shop fetched successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/shop.yml#/schemas/ShopResponse"
+      "404":
+        description: Shop not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+  put:
+    operationId: updateShop
+    tags: [Shop]
+    summary: Update shop info (owner only)
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/shop.yml#/schemas/UpdateShopRequest"
+    responses:
+      "200":
+        description: Shop updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/shop.yml#/schemas/ShopResponse"
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "403":
+        description: Forbidden — not the shop owner
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "404":
+        description: Shop not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"

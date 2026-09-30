@@ -20,6 +20,7 @@ func SetupTestServer() (*echo.Echo, *gorm.DB) {
 	// Force environment to testing
 	os.Setenv("APP_ENV", "testing")
 	os.Setenv("JWT_SECRET", "super_secret_test_key_123")
+	os.Setenv("CORS_ALLOW_ORIGINS", "http://localhost:3000")
 
 	cfg, err := config.Load()
 	if err != nil {

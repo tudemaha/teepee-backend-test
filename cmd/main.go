@@ -55,7 +55,11 @@ func main() {
 	// Global Middleware
 	e.Use(middleware.RequestLogger())
 	e.Use(middleware.Recover())
-	e.Use(middleware.CORS())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: cfg.CORS.AllowOrigins,
+		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Content-Type", "Authorization"},
+	}))
 
 	// Simple health check route
 	e.GET("/health", func(c *echo.Context) error {

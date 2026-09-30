@@ -1,0 +1,55 @@
+schemas:
+  CreatePaymentRequest:
+    type: object
+    required: [order_id, method]
+    properties:
+      order_id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120025"
+      method:
+        type: string
+        enum: [cod, bank_transfer, qris]
+        example: qris
+
+  UpdatePaymentStatusRequest:
+    type: object
+    required: [status]
+    properties:
+      status:
+        type: string
+        enum: [pending, paid, failed]
+        example: paid
+
+  PaymentResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120040"
+      order_id:
+        type: string
+        format: uuid
+        example: "01927e4b-3c8a-7f11-a1b2-0242ac120025"
+      amount:
+        type: integer
+        format: int64
+        example: 39998000
+      method:
+        type: string
+        enum: [cod, bank_transfer, qris]
+        example: qris
+      status:
+        type: string
+        enum: [pending, paid, failed]
+        example: pending
+      paid_at:
+        type: string
+        format: date-time
+        nullable: true
+        example: null
+      created_at:
+        type: string
+        format: date-time
+        example: "2026-09-30T10:05:00Z"

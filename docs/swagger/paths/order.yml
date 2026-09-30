@@ -1,0 +1,154 @@
+checkout:
+  post:
+    operationId: checkoutOrder
+    tags: [Order]
+    summary: Checkout cart items — atomic operation
+    description: |
+      Creates an order from cart items in a single database transaction:
+      - Validates product availability and stock
+      - Snapshots unit prices at time of checkout
+      - Decrements stock atomically (race-condition safe)
+      - Marks cart items as checked out
+      - Creates a pending payment record
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/order.yml#/schemas/CheckoutRequest"
+    responses:
+      "201":
+        description: Order created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/order.yml#/schemas/OrderResponse"
+      "400":
+        description: Empty cart, product unavailable, or insufficient stock
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+orders:
+  get:
+    operationId: listMyOrders
+    tags: [Order]
+    summary: List the current user's orders
+    security:
+      - BearerAuth: []
+    responses:
+      "200":
+        description: Orders fetched successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: "../components/order.yml#/schemas/OrderResponse"
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+ordersId:
+  get:
+    operationId: getOrderById
+    tags: [Order]
+    summary: Get order details by ID
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Order fetched successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/order.yml#/schemas/OrderResponse"
+      "404":
+        description: Order not found
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+
+ordersIdStatus:
+  patch:
+    operationId: updateOrderStatus
+    tags: [Order]
+    summary: Update order status (seller/admin only)
+    description: |
+      Valid status transitions:
+      `pending → confirmed → shipped → delivered → completed`
+      `pending → cancelled` (restores stock atomically)
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/order.yml#/schemas/UpdateOrderStatusRequest"
+    responses:
+      "200":
+        description: Order status updated
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../openapi.yml#/components/schemas/SuccessResponse"
+                - type: object
+                  properties:
+                    data:
+                      $ref: "../components/order.yml#/schemas/OrderResponse"
+      "400":
+        description: Invalid status transition
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
+      "403":
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yml#/components/schemas/ErrorResponse"
