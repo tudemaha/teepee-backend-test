@@ -45,3 +45,11 @@ type ProductListFilter struct {
 	Limit      int       `query:"limit"`
 	Offset     int       `query:"offset"`
 }
+
+type UpdateProductStockRequest struct {
+	Stock int `json:"stock" validate:"required,min=0"`
+}
+
+type UpdateProductAvailabilityRequest struct {
+	Available *bool `json:"available" validate:"required"`
+}

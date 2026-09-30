@@ -22,6 +22,8 @@ type ProductUseCase interface {
 	GetByID(id uuid.UUID) (*dto.ProductResponse, error)
 	GetAll(filter dto.ProductListFilter) ([]dto.ProductResponse, error)
 	Update(sellerID uuid.UUID, productID uuid.UUID, req *dto.UpdateProductRequest) (*dto.ProductResponse, error)
+	UpdateStock(sellerID uuid.UUID, productID uuid.UUID, req *dto.UpdateProductStockRequest) (*dto.ProductResponse, error)
+	UpdateAvailability(sellerID uuid.UUID, productID uuid.UUID, req *dto.UpdateProductAvailabilityRequest) (*dto.ProductResponse, error)
 	Delete(sellerID uuid.UUID, productID uuid.UUID) error
 }
 
@@ -166,4 +168,44 @@ func (u *productUseCase) Delete(sellerID uuid.UUID, productID uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (u *productUseCase) UpdateStock(sellerID uuid.UUID, productID uuid.UUID, req *dto.UpdateProductStockRequest) (*dto.ProductResponse, error) {
+	product, err := u.productRepo.FindByID(productID)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
+	}
+
+	shop, err := u.shopRepo.FindByOwnerID(sellerID)
+	if err != nil || shop.ID != product.ShopID {
+		return nil, fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to update this product")
+	}
+
+	product.Stock = req.Stock
+	if err := u.productRepo.Update(product, nil); err != nil {
+		return nil, errors.New("failed to update product stock")
+	}
+
+	updatedProduct, _ := u.productRepo.FindByID(productID)
+	return utils.MapToProductResponse(updatedProduct), nil
+}
+
+func (u *productUseCase) UpdateAvailability(sellerID uuid.UUID, productID uuid.UUID, req *dto.UpdateProductAvailabilityRequest) (*dto.ProductResponse, error) {
+	product, err := u.productRepo.FindByID(productID)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", apperror.ErrNotFound, "product not found")
+	}
+
+	shop, err := u.shopRepo.FindByOwnerID(sellerID)
+	if err != nil || shop.ID != product.ShopID {
+		return nil, fmt.Errorf("%w: %s", apperror.ErrForbidden, "unauthorized to update this product")
+	}
+
+	product.Available = *req.Available
+	if err := u.productRepo.Update(product, nil); err != nil {
+		return nil, errors.New("failed to update product availability")
+	}
+
+	updatedProduct, _ := u.productRepo.FindByID(productID)
+	return utils.MapToProductResponse(updatedProduct), nil
 }

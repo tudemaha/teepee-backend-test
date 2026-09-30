@@ -155,3 +155,67 @@ func (h *ProductHandler) Delete(c *echo.Context) error {
 
 	return response.Success(c, http.StatusOK, "product deleted successfully", nil)
 }
+
+func (h *ProductHandler) UpdateStock(c *echo.Context) error {
+	sellerIDStr := c.Get("user_id").(string)
+	sellerID, _ := uuid.Parse(sellerIDStr)
+
+	idParam := c.Param("id")
+	productID, err := uuid.Parse(idParam)
+	if err != nil {
+		return response.Error(c, http.StatusBadRequest, "invalid product id format", nil)
+	}
+
+	var req dto.UpdateProductStockRequest
+	if err := c.Bind(&req); err != nil {
+		return response.Error(c, http.StatusBadRequest, "invalid request body", []string{err.Error()})
+	}
+	if err := c.Validate(&req); err != nil {
+		return response.Error(c, http.StatusBadRequest, "validation failed", validator.FormatErrors(err))
+	}
+
+	res, err := h.productUC.UpdateStock(sellerID, productID, &req)
+	if err != nil {
+		if errors.Is(err, apperror.ErrNotFound) {
+			return response.Error(c, http.StatusNotFound, err.Error(), nil)
+		}
+		if errors.Is(err, apperror.ErrForbidden) {
+			return response.Error(c, http.StatusForbidden, err.Error(), nil)
+		}
+		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
+	}
+
+	return response.Success(c, http.StatusOK, "product stock updated successfully", res)
+}
+
+func (h *ProductHandler) UpdateAvailability(c *echo.Context) error {
+	sellerIDStr := c.Get("user_id").(string)
+	sellerID, _ := uuid.Parse(sellerIDStr)
+
+	idParam := c.Param("id")
+	productID, err := uuid.Parse(idParam)
+	if err != nil {
+		return response.Error(c, http.StatusBadRequest, "invalid product id format", nil)
+	}
+
+	var req dto.UpdateProductAvailabilityRequest
+	if err := c.Bind(&req); err != nil {
+		return response.Error(c, http.StatusBadRequest, "invalid request body", []string{err.Error()})
+	}
+	if err := c.Validate(&req); err != nil {
+		return response.Error(c, http.StatusBadRequest, "validation failed", validator.FormatErrors(err))
+	}
+
+	res, err := h.productUC.UpdateAvailability(sellerID, productID, &req)
+	if err != nil {
+		if errors.Is(err, apperror.ErrNotFound) {
+			return response.Error(c, http.StatusNotFound, err.Error(), nil)
+		}
+		if errors.Is(err, apperror.ErrForbidden) {
+			return response.Error(c, http.StatusForbidden, err.Error(), nil)
+		}
+		return response.Error(c, http.StatusInternalServerError, err.Error(), nil)
+	}
+
+	return response.Success(c, http.StatusOK, "product availability updated successfully", res)
+}
