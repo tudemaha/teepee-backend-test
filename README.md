@@ -226,7 +226,22 @@ Then start with autoreload:
 air
 ```
 
-The server will start on `http://localhost:8080`. The database schema is automatically migrated via GORM `AutoMigrate` on startup. A default admin user is also seeded from the `ADMIN_EMAIL` and `ADMIN_PASSWORD` env vars.
+The server will start on `http://localhost:8080`. The database schema is automatically migrated via GORM `AutoMigrate` on startup.
+
+### 5. Seed Data
+
+When the application starts, it automatically seeds the database with essential data so you can test immediately:
+
+**Default Categories:** `Electronics`, `Fashion`, `Home & Living`, `Beauty`, `Sports`.
+
+**Default Users (one for each role):**
+
+| Role       | Email                            | Password   | Notes |
+| ---------- | -------------------------------- | ---------- | ----- |
+| **Admin**  | `admin@example.com` (from `.env`)| `admin123` (from `.env`) | Can manage categories |
+| **Seller** | `seller@example.com` (from `.env`)| `seller123` (from `.env`) | Automatically gets a default Shop created |
+| **Buyer**  | `buyer@example.com` (from `.env`)| `buyer123` (from `.env`) | Can add to cart and checkout |
+
 
 ---
 

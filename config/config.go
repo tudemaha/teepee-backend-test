@@ -16,10 +16,14 @@ type Config struct {
 }
 
 type AppConfig struct {
-	Port          string
-	Env           string
-	AdminEmail    string
-	AdminPassword string
+	Port           string
+	Env            string
+	AdminEmail     string
+	AdminPassword  string
+	SellerEmail    string
+	SellerPassword string
+	BuyerEmail     string
+	BuyerPassword  string
 }
 
 type DatabaseConfig struct {
@@ -64,10 +68,14 @@ func Load() (*Config, error) {
 
 	cfg := &Config{
 		App: AppConfig{
-			Port:          getEnv("APP_PORT", "8080"),
-			Env:           getEnv("APP_ENV", "development"),
-			AdminEmail:    getEnv("ADMIN_EMAIL", "admin@example.com"),
-			AdminPassword: getEnv("ADMIN_PASSWORD", "admin123"),
+			Port:           getEnv("APP_PORT", "8080"),
+			Env:            getEnv("APP_ENV", "development"),
+			AdminEmail:     getEnv("ADMIN_EMAIL", "admin@example.com"),
+			AdminPassword:  getEnv("ADMIN_PASSWORD", "admin123"),
+			SellerEmail:    getEnv("SELLER_EMAIL", "seller@example.com"),
+			SellerPassword: getEnv("SELLER_PASSWORD", "seller123"),
+			BuyerEmail:     getEnv("BUYER_EMAIL", "buyer@example.com"),
+			BuyerPassword:  getEnv("BUYER_PASSWORD", "buyer123"),
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
